@@ -124,7 +124,7 @@ void vertex_specification() {
 
 	// cleanup
 	glBindVertexArray(0);
-	//glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(0);
 }
 
 GLuint compile_shader(GLuint type, const std::string& source) {

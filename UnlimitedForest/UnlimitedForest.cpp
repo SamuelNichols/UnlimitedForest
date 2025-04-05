@@ -249,6 +249,8 @@ void draw() {
 	if (error != GL_NO_ERROR) {
 		std::cerr << "OpenGL error in " << "draw" << ": " << error << std::endl;
 	}
+	// cleanup graphics pipeline
+	glUseProgram(0);
 }
 
 void get_opengl_version_info() {

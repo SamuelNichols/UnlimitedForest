@@ -3,7 +3,8 @@
 
 #pragma once
 
-#include <iostream>
+#include <iostream>	
+#include <glad/glad.h>
 
 void initialize_program(void);
 void vertex_specification(void);
@@ -14,3 +15,5 @@ void input(void);
 void predraw(void);
 void draw(void);
 void get_opengl_version_info(void);
+GLuint create_shader_program(std::string &vertexShaderSource, std::string &fragmentShaderSource);
+GLuint compile_shader(GLuint type, std::string& source);

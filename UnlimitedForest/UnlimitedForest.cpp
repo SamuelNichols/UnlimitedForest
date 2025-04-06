@@ -1,9 +1,15 @@
-﻿#include "UnlimitedForest.h"
+﻿#pragma once
+
+#include "UnlimitedForest.h"
 #include <SDL.h>
 #include <glad/glad.h>
 #include <iostream>
 #include <cassert>
 #include <vector>
+#include <fstream>
+#include <string>
+#include <filesystem>	
+#include <initializer_list>
 
 // screen globals
 int g_screenWidth = 640;
@@ -21,31 +27,6 @@ GLuint g_vertexArrayObject = 0;
 GLuint g_vertexBufferObject = 0;
 // program object for shaders
 GLuint g_graphicsPipelineShaderProgram = 0;
-
-// Vertex shader executes once per vertex, and will be in charge of
-// the final position of the vertex.
-const std::string g_vertexShaderSource =
-"#version 460 core\n"
-"layout(location = 0) in vec3 aPos;\n"
-"void main()\n"
-"{\n"
-"    gl_Position = vec4(aPos, 1.0);\n"
-"}\n";
-
-
-// Fragment Shader
-// The fragment shader executes once per fragment (i.e. roughly for every pixel that will be rasterized),
-// and in part determines the final color that will be sent to the screen.
-const std::string g_fragmentShaderSource =
-"#version 460 core\n"
-"out vec4 FragColor;\n"
-"\n"
-"void main()\n"
-"{\n"
-"    FragColor = vec4(1.0f, 0.5f, 0.0f, 1.0f);\n"
-"}\n";
-
-
 
 void initialize_program() {
 	//initializing sdl video component
@@ -79,11 +60,14 @@ void initialize_program() {
 
 void vertex_specification() {
 	// lives on CPU
-	const std::vector<GLfloat> vertexPositions{
+	const std::vector<GLfloat> vertexData{
 		//   x      y      z
-		-0.8f, -0.8f, 0.0f,
-		 0.8f, -0.8f, 0.0f,
-		 0.0f,  0.8f, 0.0f
+		-0.8f, -0.8f, 0.0f, // x y z
+		1.0f, 0.0f, 0.0f,   // r g b
+		0.8f, -0.8f, 0.0f,  // x y z
+		0.0f, 1.0f, 0.0f,   // r g b
+		0.0f,  0.8f, 0.0f,  // x y z
+		0.0f, 0.0f, 1.0f    // r g b
 	};
 	// loading to GPU
 	// generating VAO
@@ -100,8 +84,8 @@ void vertex_specification() {
 	glBindBuffer(GL_ARRAY_BUFFER, g_vertexBufferObject);
 	// setting buffer pointer to current buffer object id to vertex values
 	glBufferData(GL_ARRAY_BUFFER,
-		vertexPositions.size() * sizeof(GLfloat),
-		vertexPositions.data(),
+		vertexData.size() * sizeof(GLfloat),
+		vertexData.data(),
 		GL_STATIC_DRAW
 	);
 	error = glGetError();
@@ -109,22 +93,34 @@ void vertex_specification() {
 		std::cerr << "OpenGL error in buffer init: " << error << std::endl;
 	}
 
+	// enabling vertex attribute for positional data x y z
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0,
 		3,              // 3 components per vertex (x, y, z)
 		GL_FLOAT,       // data type
 		GL_FALSE,       // not normalized (correct)
-		0,              // stride (0 means tightly packed)
-		(void*)0        // offset of the first component
+		sizeof(GLfloat) * 6,              // stride (0 means tightly packed)
+		(GLvoid*)0     // offset of the first component
 	);
 	error = glGetError();
 	if (error != GL_NO_ERROR) {
-		std::cerr << "OpenGL error in vertex_specification vbo: " << error << std::endl;
+		std::cerr << "OpenGL error in vertex_specification possition: " << error << std::endl;
 	}
 
-	// cleanup
-	glBindVertexArray(0);
-	glDisableVertexAttribArray(0);
+	// enabling vertex attribute for color data r g b (offset 3 floats on position)
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1,
+		3,
+		GL_FLOAT,
+		GL_FALSE,
+		sizeof(GLfloat) * 6,
+		(GLvoid*)(sizeof(GLfloat) * 3)
+	);
+
+	error = glGetError();
+	if (error != GL_NO_ERROR) {
+		std::cerr << "OpenGL error in vertex_specification color: " << error << std::endl;
+	}
 }
 
 GLuint compile_shader(GLuint type, const std::string& source) {
@@ -132,6 +128,11 @@ GLuint compile_shader(GLuint type, const std::string& source) {
 	const char* src = source.c_str();
 	glShaderSource(shaderObject, 1, &src, nullptr);
 	glCompileShader(shaderObject);
+
+	GLenum error = glGetError();
+	if (error != GL_NO_ERROR) {
+		std::cerr << "\nError in compile_shader\n" << "Shader: " << src << "Error: " << error << std::endl;
+	}
 
 	// Check if compilation succeeded
 	GLint status;
@@ -153,6 +154,7 @@ GLuint compile_shader(GLuint type, const std::string& source) {
 
 GLuint create_shader_program(const std::string& vertexShaderSource, const std::string& fragmentShaderSource) {
 	GLuint programObject = glCreateProgram();
+
 	GLuint myVertexShader = compile_shader(GL_VERTEX_SHADER, vertexShaderSource);
 	GLuint myFragmentShader = compile_shader(GL_FRAGMENT_SHADER, fragmentShaderSource);
 
@@ -189,7 +191,9 @@ GLuint create_shader_program(const std::string& vertexShaderSource, const std::s
 }
 
 void create_graphics_pipeline() {
-	g_graphicsPipelineShaderProgram = create_shader_program(g_vertexShaderSource, g_fragmentShaderSource);
+	const std::string vertexShaderSource = load_shader_as_string(make_relative_path("shaders", "vert.glsl"));
+	const std::string fragmentShaderSource = load_shader_as_string(make_relative_path("shaders", "frag.glsl"));
+	g_graphicsPipelineShaderProgram = create_shader_program(vertexShaderSource, fragmentShaderSource);
 
 	GLenum error = glGetError();
 	if (error != GL_NO_ERROR) {
@@ -258,6 +262,22 @@ void get_opengl_version_info() {
 	std::cout << "Renderer: " << glGetString(GL_RENDERER) << std::endl;
 	std::cout << "Version: " << glGetString(GL_VERSION) << std::endl;
 	std::cout << "Shading Language: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+}
+
+std::string load_shader_as_string(const std::string& filename) {
+	// Open the file
+	std::ifstream file(filename);
+	if (!file.is_open()) {
+		std::cerr << "Error: could not open file: " << filename << std::endl;
+		return "";
+	}
+
+	// Use a string stream to read the file contents
+	std::stringstream shaderStream;
+	shaderStream << file.rdbuf();
+
+	// No need to manually close, as the ifstream destructor will handle it.
+	return shaderStream.str();
 }
 
 int main(int argc, char* argv[]) {

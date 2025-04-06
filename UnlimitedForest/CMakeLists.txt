@@ -38,6 +38,25 @@ target_link_libraries(UnlimitedForest
 # Copy SDL2.dll to build output folder after build
 add_custom_command(TARGET UnlimitedForest POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_if_different
-	"${SDL2_LIB_DIR}/SDL2.dll"
-	$<TARGET_FILE_DIR:UnlimitedForest>
+		"${SDL2_LIB_DIR}/SDL2.dll"
+		$<TARGET_FILE_DIR:UnlimitedForest>
 )
+
+# Find all shader files in the shaders directory.
+file(GLOB SHADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/shaders/*")
+
+# Define a custom command to copy the shaders directory.
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/shaders
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders
+            ${CMAKE_CURRENT_BINARY_DIR}/shaders
+    DEPENDS ${SHADER_FILES}  # re-run if any shader changes
+    COMMENT "Copying shaders directory..."
+)
+
+# Create a custom target that always runs the copy command.
+add_custom_target(copy_shaders ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/shaders)
+
+# Make your executable depend on the copy_shaders target.
+add_dependencies(UnlimitedForest copy_shaders)

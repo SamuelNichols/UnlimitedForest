@@ -16,10 +16,14 @@ set(SDL2_DIR "C:/libs/SDL2")
 set(SDL2_INCLUDE_DIR "${SDL2_DIR}/include")
 set(SDL2_LIB_DIR "${SDL2_DIR}/lib/x64")
 
+# thirdparty folder location
+set(THIRD_PARTY "${CMAKE_CURRENT_SOURCE_DIR}/external")
+
 # Include SDL2 and  headers
 include_directories(
     ${SDL2_INCLUDE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/glad/include
+    ${THIRD_PARTY}/glad/include
+	${THIRD_PARTY}/glm
 )
 # Link directories for SDL2
 link_directories(${SDL2_LIB_DIR})

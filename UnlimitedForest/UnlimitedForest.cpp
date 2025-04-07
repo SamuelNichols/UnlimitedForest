@@ -25,8 +25,34 @@ bool g_running = false;
 GLuint g_vertexArrayObject = 0;
 // OpenGL VBO
 GLuint g_vertexBufferObject = 0;
+// index buffer for reusing shared indecies of triangles
+GLuint g_vertexElementBuffer = 0;
 // program object for shaders
 GLuint g_graphicsPipelineShaderProgram = 0;
+
+#include <glm/vec3.hpp> // glm::vec3
+#include <glm/vec4.hpp> // glm::vec4
+#include <glm/mat4x4.hpp> // glm::mat4
+#include <glm/ext/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale
+#include <glm/ext/matrix_clip_space.hpp> // glm::perspective
+#include <glm/ext/scalar_constants.hpp> // glm::pi
+
+glm::mat4 camera(float Translate, glm::vec2 const& Rotate)
+{
+	glm::mat4 Projection = glm::perspective(glm::pi<float>() * 0.25f, 4.0f / 3.0f, 0.1f, 100.f);
+	glm::mat4 View = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -Translate));
+	View = glm::rotate(View, Rotate.y, glm::vec3(-1.0f, 0.0f, 0.0f));
+	View = glm::rotate(View, Rotate.x, glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
+	return Projection * View * Model;
+}
+
+void catch_gl_error(const std::string& errorMessage) {
+	GLenum error = glGetError();
+	if (error != GL_NO_ERROR) {
+		std::cerr << errorMessage << "\nError " << " : " << error << std::endl;
+	}
+}
 
 void initialize_program() {
 	//initializing sdl video component
@@ -61,22 +87,20 @@ void initialize_program() {
 void vertex_specification() {
 	// lives on CPU
 	const std::vector<GLfloat> vertexData{
-		//   x      y      z
-		-0.8f, -0.8f, 0.0f, // x y z
+		//   x      y      z// quad
+		// vec 1
+		-0.5f, -0.5f, 0.0f, // x y z bottom left
 		1.0f, 0.0f, 0.0f,   // r g b
-		0.8f, -0.8f, 0.0f,  // x y z
+		// vec 2
+		0.5f, -0.5f, 0.0f,  // x y z bottom right
 		0.0f, 1.0f, 0.0f,   // r g b
-		0.0f,  0.8f, 0.0f,  // x y z
-		0.0f, 0.0f, 1.0f    // r g b
+		// vec 3
+		-0.5f,  0.5f, 0.0f, // x y z top left
+		0.0f, 0.0f, 1.0f,   // r g b
+		// vec 4
+		0.5f, 0.5f, 0.0f,  // x y z top right
+		0.0f, 1.0f, 0.0f,   // r g b
 	};
-	// loading to GPU
-	// generating VAO
-	glGenVertexArrays(1, &g_vertexArrayObject);
-	glBindVertexArray(g_vertexArrayObject);
-	GLenum error = glGetError();
-	if (error != GL_NO_ERROR) {
-		std::cerr << "OpenGL error in vertex_specification vao: " << error << std::endl;
-	}
 
 	// generating VBO
 	glGenBuffers(1, &g_vertexBufferObject);
@@ -88,12 +112,15 @@ void vertex_specification() {
 		vertexData.data(),
 		GL_STATIC_DRAW
 	);
-	error = glGetError();
-	if (error != GL_NO_ERROR) {
-		std::cerr << "OpenGL error in buffer init: " << error << std::endl;
-	}
+	catch_gl_error("error generating vbo");
 
 	// enabling vertex attribute for positional data x y z
+	// loading to GPU
+	// generating VAO
+	glGenVertexArrays(1, &g_vertexArrayObject);
+	glBindVertexArray(g_vertexArrayObject);
+	catch_gl_error("error generating vao");
+
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0,
 		3,              // 3 components per vertex (x, y, z)
@@ -102,10 +129,7 @@ void vertex_specification() {
 		sizeof(GLfloat) * 6,              // stride (0 means tightly packed)
 		(GLvoid*)0     // offset of the first component
 	);
-	error = glGetError();
-	if (error != GL_NO_ERROR) {
-		std::cerr << "OpenGL error in vertex_specification possition: " << error << std::endl;
-	}
+	catch_gl_error("error setting vertex attributes idx: 0");
 
 	// enabling vertex attribute for color data r g b (offset 3 floats on position)
 	glEnableVertexAttribArray(1);
@@ -116,11 +140,20 @@ void vertex_specification() {
 		sizeof(GLfloat) * 6,
 		(GLvoid*)(sizeof(GLfloat) * 3)
 	);
+	catch_gl_error("error setting vertex attributes idx: 1");
 
-	error = glGetError();
-	if (error != GL_NO_ERROR) {
-		std::cerr << "OpenGL error in vertex_specification color: " << error << std::endl;
-	}
+	std::vector<GLuint> vectorIdxs = {
+		0, 1, 2,
+		1, 3, 2
+	};
+	glGenBuffers(1, &g_vertexElementBuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_vertexElementBuffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+		sizeof(GLfloat) * vectorIdxs.size(),
+		vectorIdxs.data(),
+		GL_STATIC_DRAW
+	);
+	catch_gl_error("error loading VEO");
 }
 
 GLuint compile_shader(GLuint type, const std::string& source) {
@@ -129,10 +162,7 @@ GLuint compile_shader(GLuint type, const std::string& source) {
 	glShaderSource(shaderObject, 1, &src, nullptr);
 	glCompileShader(shaderObject);
 
-	GLenum error = glGetError();
-	if (error != GL_NO_ERROR) {
-		std::cerr << "\nError in compile_shader\n" << "Shader: " << src << "Error: " << error << std::endl;
-	}
+	catch_gl_error("error compiling shader object");
 
 	// Check if compilation succeeded
 	GLint status;
@@ -195,10 +225,7 @@ void create_graphics_pipeline() {
 	const std::string fragmentShaderSource = load_shader_as_string(make_relative_path("shaders", "frag.glsl"));
 	g_graphicsPipelineShaderProgram = create_shader_program(vertexShaderSource, fragmentShaderSource);
 
-	GLenum error = glGetError();
-	if (error != GL_NO_ERROR) {
-		std::cerr << "OpenGL error in create_graphics_pipeline: " << error << std::endl;
-	}
+	catch_gl_error("error creating graphics pipeline");
 }
 
 void main_loop() {
@@ -246,13 +273,15 @@ void predraw() {
 
 void draw() {
 	glBindVertexArray(g_vertexArrayObject);
-	glBindBuffer(GL_ARRAY_BUFFER, g_vertexBufferObject);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_vertexElementBuffer);
 
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-	GLenum error = glGetError();
-	if (error != GL_NO_ERROR) {
-		std::cerr << "OpenGL error in " << "draw" << ": " << error << std::endl;
-	}
+	glDrawElements(
+		GL_TRIANGLES,
+		6,
+		GL_UNSIGNED_INT,
+		(GLvoid*)0
+	);
+	catch_gl_error("error drawing triangles");
 	// cleanup graphics pipeline
 	glUseProgram(0);
 }

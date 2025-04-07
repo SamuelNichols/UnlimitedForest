@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <initializer_list>
 
+void catch_gl_error(const std::string& errorMessage);
 void initialize_program(void);
 void vertex_specification(void);
 void create_graphics_pipeline(void);

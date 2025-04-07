@@ -9,7 +9,9 @@
             "installDir": "${sourceDir}/out/install/${presetName}",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "cl.exe",
-                "CMAKE_CXX_COMPILER": "cl.exe"
+                "CMAKE_CXX_COMPILER": "cl.exe",
+                "CMAKE_CXX_FLAGS": "/I\"${sourceDir}/UnlimitedForest/external/glad/include\" /I\"${sourceDir}/UnlimitedForest/external/glm\""
+
             },
             "condition": {
                 "type": "equals",

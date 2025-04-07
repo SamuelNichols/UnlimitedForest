@@ -10,6 +10,10 @@
 #include <string>
 #include <filesystem>	
 #include <initializer_list>
+#include <glm/glm.hpp>
+#include <glm/vec3.hpp>
+#include <glm/mat4x4.hpp>
+
 
 // screen globals
 int g_screenWidth = 640;
@@ -30,22 +34,12 @@ GLuint g_vertexElementBuffer = 0;
 // program object for shaders
 GLuint g_graphicsPipelineShaderProgram = 0;
 
-#include <glm/vec3.hpp> // glm::vec3
-#include <glm/vec4.hpp> // glm::vec4
-#include <glm/mat4x4.hpp> // glm::mat4
-#include <glm/ext/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale
-#include <glm/ext/matrix_clip_space.hpp> // glm::perspective
-#include <glm/ext/scalar_constants.hpp> // glm::pi
+// input vars
+const float g_MOVE_STEP = 0.005f;
 
-glm::mat4 camera(float Translate, glm::vec2 const& Rotate)
-{
-	glm::mat4 Projection = glm::perspective(glm::pi<float>() * 0.25f, 4.0f / 3.0f, 0.1f, 100.f);
-	glm::mat4 View = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -Translate));
-	View = glm::rotate(View, Rotate.y, glm::vec3(-1.0f, 0.0f, 0.0f));
-	View = glm::rotate(View, Rotate.x, glm::vec3(0.0f, 1.0f, 0.0f));
-	glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
-	return Projection * View * Model;
-}
+// uniforms
+float g_uYOffset = 0.0f;
+float g_uXOffset = 0.0f;
 
 void catch_gl_error(const std::string& errorMessage) {
 	GLenum error = glGetError();
@@ -258,6 +252,25 @@ void input() {
 		}
 	}
 
+	// Retrieve keyboard state
+	const Uint8* state = SDL_GetKeyboardState(NULL);
+	if (state[SDL_SCANCODE_UP]) {
+		g_uYOffset += g_MOVE_STEP;
+		std::cout << "g_uYOffset: " << g_uYOffset << std::endl;
+	}
+	if (state[SDL_SCANCODE_DOWN]) {
+		g_uYOffset -= g_MOVE_STEP;
+		std::cout << "g_uYOffset: " << g_uYOffset << std::endl;
+	}
+	if (state[SDL_SCANCODE_RIGHT]) {
+		g_uXOffset += g_MOVE_STEP;
+		std::cout << "g_uXOffset: " << g_uXOffset << std::endl;
+	}
+	if (state[SDL_SCANCODE_LEFT]) {
+		g_uXOffset -= g_MOVE_STEP;
+		std::cout << "g_uXOffset: " << g_uXOffset << std::endl;
+	}
+
 }
 
 void predraw() {
@@ -265,10 +278,14 @@ void predraw() {
 	glDisable(GL_CULL_FACE);
 
 	glViewport(0, 0, g_screenWidth, g_screenHeight);
-	glClearColor(1.f, 1.f, 0.f, 1.f);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 	glUseProgram(g_graphicsPipelineShaderProgram);
+	GLint u_YOffsetLocation = glGetUniformLocation(g_graphicsPipelineShaderProgram, "u_YOffset");
+	glUniform1f(u_YOffsetLocation, g_uYOffset);
+	GLint u_XOffsetLocation = glGetUniformLocation(g_graphicsPipelineShaderProgram, "u_XOffset");
+	glUniform1f(u_XOffsetLocation, g_uXOffset);
 }
 
 void draw() {

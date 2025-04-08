@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "UnlimitedForest.h"
+#include "core/input/InputHandler.h"
 #include <SDL.h>
 #include <glad/glad.h>
 #include <iostream>
@@ -11,8 +12,10 @@
 #include <filesystem>	
 #include <initializer_list>
 #include <glm/glm.hpp>
+#include <glm/matrix.hpp>
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 
 // screen globals
@@ -34,12 +37,11 @@ GLuint g_vertexElementBuffer = 0;
 // program object for shaders
 GLuint g_graphicsPipelineShaderProgram = 0;
 
-// input vars
-const float g_MOVE_STEP = 0.005f;
+// offsets
+Core::SelectedItemTransform g_selectedItemTransform;
+// rotation axes
+float g_yAngle;
 
-// uniforms
-float g_uYOffset = 0.0f;
-float g_uXOffset = 0.0f;
 
 void catch_gl_error(const std::string& errorMessage) {
 	GLenum error = glGetError();
@@ -223,9 +225,11 @@ void create_graphics_pipeline() {
 }
 
 void main_loop() {
+	Core::InputHandler inputHandler;
 	g_running = true;
 	while (g_running) {
-		input();
+
+		g_running = inputHandler.update(g_selectedItemTransform);
 
 		predraw();
 
@@ -243,36 +247,6 @@ void cleanup() {
 	SDL_Quit();
 }
 
-void input() {
-	SDL_Event e;
-	while (SDL_PollEvent(&e) != 0) {
-		if (e.type == SDL_QUIT) {
-			std::cout << "User exited program. Terminating..." << std::endl;
-			g_running = false;
-		}
-	}
-
-	// Retrieve keyboard state
-	const Uint8* state = SDL_GetKeyboardState(NULL);
-	if (state[SDL_SCANCODE_UP]) {
-		g_uYOffset += g_MOVE_STEP;
-		std::cout << "g_uYOffset: " << g_uYOffset << std::endl;
-	}
-	if (state[SDL_SCANCODE_DOWN]) {
-		g_uYOffset -= g_MOVE_STEP;
-		std::cout << "g_uYOffset: " << g_uYOffset << std::endl;
-	}
-	if (state[SDL_SCANCODE_RIGHT]) {
-		g_uXOffset += g_MOVE_STEP;
-		std::cout << "g_uXOffset: " << g_uXOffset << std::endl;
-	}
-	if (state[SDL_SCANCODE_LEFT]) {
-		g_uXOffset -= g_MOVE_STEP;
-		std::cout << "g_uXOffset: " << g_uXOffset << std::endl;
-	}
-
-}
-
 void predraw() {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
@@ -282,15 +256,43 @@ void predraw() {
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 	glUseProgram(g_graphicsPipelineShaderProgram);
-	GLint u_YOffsetLocation = glGetUniformLocation(g_graphicsPipelineShaderProgram, "u_YOffset");
-	glUniform1f(u_YOffsetLocation, g_uYOffset);
-	GLint u_XOffsetLocation = glGetUniformLocation(g_graphicsPipelineShaderProgram, "u_XOffset");
-	glUniform1f(u_XOffsetLocation, g_uXOffset);
+
+	// model transformation by translating our object into world space 
+	glm::mat4 model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(g_selectedItemTransform.x, g_selectedItemTransform.y, g_selectedItemTransform.z));
+	model = glm::rotate(model, glm::radians(g_selectedItemTransform.roty), glm::vec3(0.0f, 1.0f, 0.0f));
+	model = glm::rotate(model, glm::radians(g_selectedItemTransform.rotx), glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::scale(model, glm::vec3(g_selectedItemTransform.scalex, g_selectedItemTransform.scaley, 1.0f));
+
+	GLint u_ModelMatrixLocation = glGetUniformLocation(g_graphicsPipelineShaderProgram, "u_ModelMatrix");
+	if (u_ModelMatrixLocation >= 0) {
+		glUniformMatrix4fv(u_ModelMatrixLocation, 1, GL_FALSE, &model[0][0]);
+	}
+	else {
+		std::cout << "could not find u_ModelMatrix uniform" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
+	// Projection matrix (in perspective)
+	glm::mat4 perspective = glm::perspective(glm::radians(45.0f),
+		(float)g_screenWidth / (float)g_screenHeight,
+		0.1f,
+		100.0f
+	);
+
+	GLint u_PerspectiveLocation = glGetUniformLocation(g_graphicsPipelineShaderProgram, "u_Perspective");
+	if (u_PerspectiveLocation >= 0) {
+		glUniformMatrix4fv(u_PerspectiveLocation, 1, GL_FALSE, &perspective[0][0]);
+	}
+	else {
+		std::cout << "could not find u_Perspective uniform" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
 }
 
 void draw() {
 	glBindVertexArray(g_vertexArrayObject);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_vertexElementBuffer);
 
 	glDrawElements(
 		GL_TRIANGLES,

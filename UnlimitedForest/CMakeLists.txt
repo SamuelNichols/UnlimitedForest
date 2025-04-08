@@ -1,11 +1,14 @@
 ﻿# CMakeList.txt : CMake project for UnlimitedForest, include source and define
 # project specific logic here.
 
+file(GLOB_RECURSE CORE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/core/*.cpp")
+
 # Source files
 set(SOURCES
 	"UnlimitedForest.cpp"
 	"UnlimitedForest.h"
 	"glad.c"
+	${CORE_SOURCES}
 )
 
 # Add source to this project's executable.
@@ -21,6 +24,7 @@ include_directories(
     ${SDL2_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include
 	${CMAKE_CURRENT_SOURCE_DIR}/external/glm
+	${CMAKE_CURRENT_SOURCE_DIR}/core
 )
 # Link directories for SDL2
 link_directories(${SDL2_LIB_DIR})

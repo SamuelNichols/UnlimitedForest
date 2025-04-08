@@ -14,7 +14,6 @@ void vertex_specification(void);
 void create_graphics_pipeline(void);
 void main_loop(void);
 void cleanup(void);
-void input(void);
 void predraw(void);
 void draw(void);
 void get_opengl_version_info(void);

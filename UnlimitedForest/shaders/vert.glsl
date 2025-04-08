@@ -2,13 +2,14 @@
 layout(location = 0) in vec3 vectorPosition;
 layout(location = 1) in vec3 vectorColor;
 
-uniform float u_YOffset;
-uniform float u_XOffset;
+uniform mat4 u_ModelMatrix;
+uniform mat4 u_Perspective;
 
 out vec3 v_vectorColor;
 
 void main()
 {
-    gl_Position = vec4(vectorPosition.x + u_XOffset, vectorPosition.y + u_YOffset,vectorPosition.z, 1.0f);
+    vec4 newPosition = u_Perspective * u_ModelMatrix * vec4(vectorPosition, 1.0f);
+    gl_Position = newPosition;
     v_vectorColor = vectorColor;
 }

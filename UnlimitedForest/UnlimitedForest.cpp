@@ -2,6 +2,8 @@
 
 #include "UnlimitedForest.h"
 #include "core/input/InputHandler.h"
+#include "core/camera/Camera.h"
+
 #include <SDL.h>
 #include <glad/glad.h>
 #include <iostream>
@@ -41,6 +43,9 @@ GLuint g_graphicsPipelineShaderProgram = 0;
 Core::SelectedItemTransform g_selectedItemTransform;
 // rotation axes
 float g_yAngle;
+
+// camera
+Camera g_mainCam = Camera();
 
 
 void catch_gl_error(const std::string& errorMessage) {
@@ -229,7 +234,7 @@ void main_loop() {
 	g_running = true;
 	while (g_running) {
 
-		g_running = inputHandler.update(g_selectedItemTransform);
+		g_running = inputHandler.update(g_selectedItemTransform, g_mainCam);
 
 		predraw();
 
@@ -257,6 +262,9 @@ void predraw() {
 
 	glUseProgram(g_graphicsPipelineShaderProgram);
 
+	// Constant rotation to object
+	g_selectedItemTransform.roty += 0.05f;
+
 	// model transformation by translating our object into world space 
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, glm::vec3(g_selectedItemTransform.x, g_selectedItemTransform.y, g_selectedItemTransform.z));
@@ -267,6 +275,17 @@ void predraw() {
 	GLint u_ModelMatrixLocation = glGetUniformLocation(g_graphicsPipelineShaderProgram, "u_ModelMatrix");
 	if (u_ModelMatrixLocation >= 0) {
 		glUniformMatrix4fv(u_ModelMatrixLocation, 1, GL_FALSE, &model[0][0]);
+	}
+	else {
+		std::cout << "could not find u_ModelMatrix uniform" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
+	glm::mat4 view = g_mainCam.get_view_matrix();
+
+	GLint u_ViewMatrixLocation = glGetUniformLocation(g_graphicsPipelineShaderProgram, "u_ViewMatrix");
+	if (u_ViewMatrixLocation >= 0) {
+		glUniformMatrix4fv(u_ViewMatrixLocation, 1, GL_FALSE, &view[0][0]);
 	}
 	else {
 		std::cout << "could not find u_ModelMatrix uniform" << std::endl;

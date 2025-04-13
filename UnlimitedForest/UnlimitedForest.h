@@ -13,6 +13,7 @@ void initialize_program(void);
 void vertex_specification(void);
 void create_graphics_pipeline(void);
 void main_loop(void);
+bool input(void);
 void cleanup(void);
 void predraw(void);
 void draw(void);

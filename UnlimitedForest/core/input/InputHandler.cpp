@@ -12,13 +12,42 @@ const float SCALEMIN = 0.1f;
 
 namespace Core {
 	InputHandler::InputHandler() {
-		this->m_dragEvent = false;
+		m_dragEvent = false;
+		m_currItem = ITEM;
 	}
 	// destructor
 	InputHandler::~InputHandler() {}
 
 	// called on main loop
-	bool InputHandler::update(SelectedItemTransform& transform) {
+	bool InputHandler::update(SelectedItemTransform& transform, Camera& camera) {
+		while (SDL_PollEvent(&m_event)) {
+			if (m_event.type == SDL_KEYDOWN && !m_event.key.repeat) {
+				if (m_event.key.keysym.scancode == SDL_SCANCODE_BACKSLASH) {
+					++m_currItem;
+				}
+			}
+		}
+		switch (m_currItem)
+		{
+		case Core::ITEM:
+			// item selected
+			std::cout << "item selected" << std::endl;
+			return InputHandler::update_item(transform);
+			break;
+		case Core::CAMERA:
+			// camera selected
+			std::cout << "camera selected" << std::endl;
+			return InputHandler::update_camera(camera);
+			break;
+		default:
+			break;
+		}
+		return false;
+	}
+
+	// -------------------------------- update item flow ---------------------------------------------
+
+	bool InputHandler::update_item(SelectedItemTransform& transform) {
 		while (SDL_PollEvent(&m_event) != 0) {
 			if (m_event.type == SDL_QUIT) {
 				std::cout << "User exited program. Terminating..." << std::endl;
@@ -108,4 +137,36 @@ namespace Core {
 		transform.scaley = std::max(y, SCALEMIN);
 		transform.scalez = std::max(z, SCALEMIN);
 	}
+
+	// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv end update item vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
+	// -------------------------------- update camera flow -------------------------------------------
+
+	bool InputHandler::update_camera(Camera& camera) {
+		// TODO: handle camera input
+		m_keyState = SDL_GetKeyboardState(NULL);
+		if (m_keyState[SDL_SCANCODE_DOWN]) {
+			camera.translate_y(-MOVESTEP);
+		}
+		if (m_keyState[SDL_SCANCODE_UP]) {
+			camera.translate_y(MOVESTEP);
+		}
+		if (m_keyState[SDL_SCANCODE_LEFT]) {
+			camera.translate_x(-MOVESTEP);
+		}
+		if (m_keyState[SDL_SCANCODE_RIGHT]) {
+			camera.translate_x(MOVESTEP);
+		}
+		if (m_keyState[SDL_SCANCODE_LSHIFT]) {
+			camera.translate_z(-MOVESTEP);
+		}
+		if (m_keyState[SDL_SCANCODE_SPACE]) {
+			camera.translate_z(MOVESTEP);
+		}
+		return true;
+	}
+
+	// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv end camera item vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
+
 }

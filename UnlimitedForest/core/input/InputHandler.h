@@ -44,14 +44,15 @@ namespace Core {
 
         // Match the function signature to what you actually need
         bool update(SelectedItemTransform& offset, Camera& camera);
-        bool update_item(SelectedItemTransform& offset);
-        bool update_camera(Camera& camera);
+        void update_item(SelectedItemTransform& offset);
+        void update_camera(Camera& camera);
 
     private:
         void handle_move_event(SelectedItemTransform& transform);
         void handle_drag_event(SelectedItemTransform& transform);
         void handle_rotate_event(SelectedItemTransform& transform);
         void scale(SelectedItemTransform& transform, float x, float y, float z);
+        void maybe_swap_selected_item(void);
 
         bool m_dragEvent;
         SDL_Event m_event;

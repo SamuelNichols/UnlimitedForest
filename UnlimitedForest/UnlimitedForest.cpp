@@ -13,11 +13,17 @@
 #include <string>
 #include <filesystem>	
 #include <initializer_list>
+
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <glm/glm.hpp>
 #include <glm/matrix.hpp>
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
+
 
 
 // screen globals
@@ -267,9 +273,22 @@ void predraw() {
 
 	// model transformation by translating our object into world space 
 	glm::mat4 model = glm::mat4(1.0f);
+	// translate the model first
 	model = glm::translate(model, glm::vec3(g_selectedItemTransform.x, g_selectedItemTransform.y, g_selectedItemTransform.z));
-	model = glm::rotate(model, glm::radians(g_selectedItemTransform.roty), glm::vec3(0.0f, 1.0f, 0.0f));
-	model = glm::rotate(model, glm::radians(g_selectedItemTransform.rotx), glm::vec3(1.0f, 0.0f, 0.0f));
+	/*model = glm::rotate(model, glm::radians(g_selectedItemTransform.roty), glm::vec3(0.0f, 1.0f, 0.0f));
+	model = glm::rotate(model, glm::radians(g_selectedItemTransform.rotx), glm::vec3(1.0f, 0.0f, 0.0f));*/
+
+	// then rotate
+	glm::mat4 rotation = glm::toMat4(glm::quat(
+		glm::vec3(
+			glm::radians(g_selectedItemTransform.x),
+			glm::radians(g_selectedItemTransform.y),
+			0.0
+		)
+	));
+	model = model * rotation;
+
+	// finally scale
 	model = glm::scale(model, glm::vec3(g_selectedItemTransform.scalex, g_selectedItemTransform.scaley, 1.0f));
 
 	GLint u_ModelMatrixLocation = glGetUniformLocation(g_graphicsPipelineShaderProgram, "u_ModelMatrix");

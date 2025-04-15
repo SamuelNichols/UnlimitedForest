@@ -2,9 +2,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 //default constructor places camera at z 2 (positive towards you) and view focus at -1 to ensure facing out to the negative
-Camera::Camera() : Camera(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0, 0.0)) {}
+Camera::Camera(const uint8_t& id) : Camera(id, glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0, 0.0)) {}
 
-Camera::Camera(const glm::vec3& eye, const glm::vec3& viewDirection, const glm::vec3& up) {
+Camera::Camera(const uint8_t& id, const glm::vec3& eye, const glm::vec3& viewDirection, const glm::vec3& up) : Node(id){
 	m_eye = eye;
 	m_viewDirection = viewDirection;
 	m_upVector = up;

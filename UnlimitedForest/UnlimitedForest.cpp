@@ -3,6 +3,7 @@
 #include "UnlimitedForest.h"
 #include "core/input/InputHandler.h"
 #include "core/camera/Camera.h"
+#include "core/node_manager/NodeManager.h"
 
 #include <SDL.h>
 #include <glad/glad.h>
@@ -40,12 +41,12 @@ GLuint g_vertexElementBuffer = 0;
 GLuint g_graphicsPipelineShaderProgram = 0;
 
 // offsets
-Core::SelectedItemTransform g_selectedItemTransform;
+SelectedItemTransform g_selectedItemTransform;
 // rotation axes
 float g_yAngle;
 
 // camera
-Camera g_mainCam = Camera();
+Camera g_mainCam(0);
 
 
 void catch_gl_error(const std::string& errorMessage) {
@@ -230,11 +231,13 @@ void create_graphics_pipeline() {
 }
 
 void main_loop() {
-	Core::InputHandler inputHandler;
+	InputHandler inputHandler;
+	NodeManager nodeManager;
 	g_running = true;
 	while (g_running) {
 
 		g_running = inputHandler.update(g_selectedItemTransform, g_mainCam);
+		bool n = nodeManager.update();
 
 		predraw();
 
@@ -263,7 +266,7 @@ void predraw() {
 	glUseProgram(g_graphicsPipelineShaderProgram);
 
 	// Constant rotation to object
-	g_selectedItemTransform.roty += 0.05f;
+	//g_selectedItemTransform.roty += 0.05f;
 
 	// model transformation by translating our object into world space 
 	glm::mat4 model = glm::mat4(1.0f);

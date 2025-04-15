@@ -2,11 +2,14 @@
 #define camera_h
 
 #include <glm/glm.hpp>
+#include <cstdint>
 
-class Camera {
+#include <node/Node.h>
+
+class Camera : public Node {
 public:
-	Camera();
-	Camera(const glm::vec3 &eye,const glm::vec3 &viewDirectio, const glm::vec3 &up);
+	Camera(const uint8_t& id);
+	Camera(const uint8_t& id, const glm::vec3 &eye,const glm::vec3 &viewDirectio, const glm::vec3 &up);
 	~Camera();
 
 	//ultimate view matrix

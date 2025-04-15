@@ -29,12 +29,12 @@ bool InputHandler::update(SelectedItemTransform& transform, Camera& camera) {
 	}
 	switch (m_currItem)
 	{
-	case Core::ITEM:
+	case ITEM:
 		// item selected
 		std::cout << "item selected" << std::endl;
 		return InputHandler::update_item(transform);
 		break;
-	case Core::CAMERA:
+	case CAMERA:
 		// camera selected
 		std::cout << "camera selected" << std::endl;
 		return InputHandler::update_camera(camera);

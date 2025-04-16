@@ -34,9 +34,12 @@ find_package(OpenGL REQUIRED)
 
 # Link SDL2 and OpenGL
 target_link_libraries(UnlimitedForest
+	# external deps
 	${SDL2_LIB_DIR}/SDL2.lib
 	${SDL2_LIB_DIR}/SDL2main.lib
 	OpenGL::GL
+	# third_party submodule deps
+	spdlog::spdlog
 )
 
 

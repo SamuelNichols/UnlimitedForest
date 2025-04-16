@@ -14,6 +14,11 @@
 #include <string>
 #include <filesystem>	
 #include <initializer_list>
+
+#include "spdlog/spdlog.h"
+#include "spdlog/async.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+
 #include <glm/glm.hpp>
 #include <glm/matrix.hpp>
 #include <glm/vec3.hpp>
@@ -55,6 +60,26 @@ void catch_gl_error(const std::string& errorMessage) {
 	if (error != GL_NO_ERROR) {
 		std::cerr << errorMessage << "\nError " << " : " << error << std::endl;
 	}
+}
+
+void initialize_logger()
+{
+	// 1) Initialize the spdlog thread pool (required for async logging).
+	const size_t queue_size = 8192;
+	const size_t num_threads = 1;
+	spdlog::init_thread_pool(queue_size, num_threads);
+
+	// 2) Create an asynchronous logger that writes to the color console (stdout).
+	auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+	auto async_console = std::make_shared<spdlog::async_logger>(
+		"async_console",
+		console_sink,
+		spdlog::thread_pool::instance(),
+		spdlog::async_overflow_policy::block
+	);
+
+	// 3) Register the logger so we can retrieve it elsewhere by name if we want.
+	spdlog::register_logger(async_console);
 }
 
 void initialize_program() {

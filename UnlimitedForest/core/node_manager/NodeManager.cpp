@@ -45,6 +45,7 @@ uint8_t NodeManager::create_render_item(const glm::vec3& worldPosition, const gl
 	uint8_t newId = create_id();
 	RenderItem* newRI = new RenderItem(newId, worldPosition, rotation, scale);
 	m_nodes.emplace_back(newRI);
+	m_renderItems.emplace_back(newId);
 	if (!m_selectedRenderItem) {
 		m_selectedRenderItem = newRI;
 	}

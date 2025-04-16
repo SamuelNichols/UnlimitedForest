@@ -3,6 +3,9 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
 #include <glm/gtx/string_cast.hpp>
+#include <algorithm>
+
+const float SCALEMIN = 0.1f;
 
 RenderItem::RenderItem(const uint8_t& id, const glm::vec3& worldPosition, const glm::vec3& rotation, const glm::vec3& scale) 
 	: Node(id),
@@ -13,14 +16,19 @@ RenderItem::RenderItem(const uint8_t& id, const glm::vec3& worldPosition, const 
 
 void RenderItem::translate(const glm::vec3& tlate) {
 	m_worldPosition += tlate;
+	this->print();
 }
 
 void RenderItem::rotate(const glm::vec3& eulerAngles) {
 	m_rotation += eulerAngles;
+	this->print();
 }
 
 void RenderItem::scale(const glm::vec3& scale) {
-	m_scale += scale;
+	m_scale.x = std::max(m_scale.x + scale.x, SCALEMIN);
+	m_scale.y = std::max(m_scale.y + scale.y, SCALEMIN);
+	m_scale.z = std::max(m_scale.z + scale.z, SCALEMIN);
+	this->print();
 }
 
 void RenderItem::print() {

@@ -18,3 +18,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Include sub-projects.
 add_subdirectory ("UnlimitedForest")
+
+# third_party
+add_subdirectory(third_party/spdlog)

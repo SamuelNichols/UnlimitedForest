@@ -8,7 +8,6 @@
 const float MOVESTEP = 0.005f;
 
 const float SCALESTEP = 0.01f;
-const float SCALEMIN = 0.1f;
 
 
 InputHandler::InputHandler() {
@@ -24,6 +23,19 @@ bool InputHandler::update(NodeManager& nm) {
 		if (m_event.type == SDL_KEYDOWN && !m_event.key.repeat) {
 			if (m_event.key.keysym.scancode == SDL_SCANCODE_BACKSLASH) {
 				++m_currItem;
+				switch (m_currItem)
+				{
+				case ITEM:
+					std::cout << "item selected" << std::endl;
+					break;
+				case CAMERA:
+					std::cout << "camera selected" << std::endl;
+					break;
+				case END:
+					break;
+				default:
+					break;
+				}
 			}
 		}
 	}
@@ -32,8 +44,6 @@ bool InputHandler::update(NodeManager& nm) {
 	switch (m_currItem)
 	{
 	case ITEM:
-		// item selected
-		std::cout << "item selected" << std::endl;
 		ri = nm.get_render_item();
 		if (ri) {
 			return InputHandler::update_item(ri);
@@ -41,8 +51,6 @@ bool InputHandler::update(NodeManager& nm) {
 		return false;
 		break;
 	case CAMERA:
-		// camera selected
-		std::cout << "camera selected" << std::endl;
 		cam = nm.get_camera();
 		if (cam) {
 			return InputHandler::update_camera(cam);
@@ -92,27 +100,21 @@ void InputHandler::handle_move_event(RenderItem* ri) {
 	// Retrieve keyboard state
 	if (m_keyState[SDL_SCANCODE_UP]) {
 		transform.y += MOVESTEP;
-		std::cout << "y transform: " << transform.y << std::endl;
 	}
 	if (m_keyState[SDL_SCANCODE_DOWN]) {
 		transform.y -= MOVESTEP;
-		std::cout << "y transform: " << transform.y << std::endl;
 	}
 	if (m_keyState[SDL_SCANCODE_RIGHT]) {
 		transform.x += MOVESTEP;
-		std::cout << "x transform: " << transform.x << std::endl;
 	}
 	if (m_keyState[SDL_SCANCODE_LEFT]) {
 		transform.x -= MOVESTEP;
-		std::cout << "x transform: " << transform.x << std::endl;
 	}
 	if (m_keyState[SDL_SCANCODE_LSHIFT]) {
 		transform.z -= MOVESTEP;
-		std::cout << "z transform: " << transform.z << std::endl;
 	}
 	if (m_keyState[SDL_SCANCODE_SPACE]) {
 		transform.z += MOVESTEP;
-		std::cout << "z transform: " << transform.z << std::endl;
 	}
 	// apply the transform to the render object
 	ri->translate(transform);
@@ -153,21 +155,27 @@ bool InputHandler::update_camera(Camera* camera) {
 	// TODO: handle camera input
 	m_keyState = SDL_GetKeyboardState(NULL);
 	if (m_keyState[SDL_SCANCODE_DOWN]) {
+		std::cout << "cam move down" << std::endl;
 		camera->translate_y(-MOVESTEP);
 	}
 	if (m_keyState[SDL_SCANCODE_UP]) {
+		std::cout << "cam move up" << std::endl;
 		camera->translate_y(MOVESTEP);
 	}
 	if (m_keyState[SDL_SCANCODE_LEFT]) {
+		std::cout << "cam move left" << std::endl;
 		camera->translate_x(-MOVESTEP);
 	}
 	if (m_keyState[SDL_SCANCODE_RIGHT]) {
+		std::cout << "cam move right" << std::endl;
 		camera->translate_x(MOVESTEP);
 	}
 	if (m_keyState[SDL_SCANCODE_LSHIFT]) {
+		std::cout << "cam move forward" << std::endl;
 		camera->translate_z(-MOVESTEP);
 	}
 	if (m_keyState[SDL_SCANCODE_SPACE]) {
+		std::cout << "cam move back" << std::endl;
 		camera->translate_z(MOVESTEP);
 	}
 	return true;

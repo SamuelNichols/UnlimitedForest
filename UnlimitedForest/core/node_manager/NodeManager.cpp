@@ -21,21 +21,33 @@ uint8_t NodeManager::create_id() {
 
 uint8_t NodeManager::create_camera() {
 	uint8_t newId = create_id();
-	m_nodes.emplace_back(new Camera(newId));
+	Camera* newCam = new Camera(newId);
+	m_nodes.emplace_back(newCam);
 	m_cameras.emplace_back(newId);
+	if (!m_selectedCamera) {
+		m_selectedCamera = newCam;
+	}
 	return newId;
 }
 
 uint8_t NodeManager::create_camera(const glm::vec3& eye, const glm::vec3& viewDirection, const glm::vec3& up) {
 	uint8_t newId = create_id();
-	m_nodes.emplace_back(new Camera(newId, eye, viewDirection, up));
+	Camera* newCam = new Camera(newId, eye, viewDirection, up);
+	m_nodes.emplace_back(newCam);
 	m_cameras.emplace_back(newId);
+	if (!m_selectedCamera) {
+		m_selectedCamera = newCam;
+	}
 	return newId;
 }
 
 uint8_t NodeManager::create_render_item(const glm::vec3& worldPosition, const glm::vec3& rotation, const glm::vec3& scale) {
 	uint8_t newId = create_id();
-	m_nodes.emplace_back(new RenderItem(newId, worldPosition, rotation, scale));
+	RenderItem* newRI = new RenderItem(newId, worldPosition, rotation, scale);
+	m_nodes.emplace_back(newRI);
+	if (!m_selectedRenderItem) {
+		m_selectedRenderItem = newRI;
+	}
 	return newId;
 }
 
@@ -121,4 +133,12 @@ bool NodeManager::select_next_render_item() {
 	}
 
 	return select_render_item(nextId);
+}
+
+Camera* NodeManager::get_camera() {
+	return m_selectedCamera;
+}
+
+RenderItem* NodeManager::get_render_item() {
+	return m_selectedRenderItem;
 }

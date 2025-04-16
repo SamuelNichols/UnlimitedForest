@@ -42,8 +42,9 @@ GLuint g_graphicsPipelineShaderProgram = 0;
 
 // offsets
 SelectedItemTransform g_selectedItemTransform;
-// rotation axes
-float g_yAngle;
+
+// global for now since rendering is still in main process
+NodeManager g_nodeManager;
 
 // camera
 Camera g_mainCam(0);
@@ -84,6 +85,13 @@ void initialize_program() {
 		std::exit(-1);
 	}
 	get_opengl_version_info();
+
+	// creating inital nodes
+	g_nodeManager.create_camera();
+	g_nodeManager.create_render_item(glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(1.0f, 1.0f, 1.0f)
+	);
 }
 
 void vertex_specification() {
@@ -232,12 +240,12 @@ void create_graphics_pipeline() {
 
 void main_loop() {
 	InputHandler inputHandler;
-	NodeManager nodeManager;
+
 	g_running = true;
 	while (g_running) {
 
-		g_running = inputHandler.update(g_selectedItemTransform, g_mainCam);
-		bool n = nodeManager.update();
+		g_running = inputHandler.update(g_nodeManager);
+		//bool n = g_nodeManager.update();
 
 		predraw();
 
@@ -268,12 +276,15 @@ void predraw() {
 	// Constant rotation to object
 	//g_selectedItemTransform.roty += 0.05f;
 
+	Camera* camera = g_nodeManager.get_camera();
+	RenderItem* ri = g_nodeManager.get_render_item();
+
 	// model transformation by translating our object into world space 
 	glm::mat4 model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(g_selectedItemTransform.x, g_selectedItemTransform.y, g_selectedItemTransform.z));
-	model = glm::rotate(model, glm::radians(g_selectedItemTransform.roty), glm::vec3(0.0f, 1.0f, 0.0f));
-	model = glm::rotate(model, glm::radians(g_selectedItemTransform.rotx), glm::vec3(1.0f, 0.0f, 0.0f));
-	model = glm::scale(model, glm::vec3(g_selectedItemTransform.scalex, g_selectedItemTransform.scaley, 1.0f));
+	model = glm::translate(model, glm::vec3(ri->m_worldPosition.x, ri->m_worldPosition.y, ri->m_worldPosition.z));
+	model = glm::rotate(model, glm::radians(ri->m_rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+	model = glm::rotate(model, glm::radians(ri->m_rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::scale(model, glm::vec3(ri->m_scale.x, ri->m_scale.y, 1.0f));
 
 	GLint u_ModelMatrixLocation = glGetUniformLocation(g_graphicsPipelineShaderProgram, "u_ModelMatrix");
 	if (u_ModelMatrixLocation >= 0) {

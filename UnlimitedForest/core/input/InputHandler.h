@@ -1,7 +1,9 @@
 #pragma once
 #include <SDL.h>
 #include <iostream>
+#include "node_manager/NodeManager.h"
 #include <camera/Camera.h>
+#include <render_item/RenderItem.h>
 
 
 // selected item manager, really TODO type shit
@@ -43,15 +45,15 @@ public:
 	~InputHandler();
 
 	// Match the function signature to what you actually need
-	bool update(SelectedItemTransform& offset, Camera& camera);
-	bool update_item(SelectedItemTransform& offset);
-	bool update_camera(Camera& camera);
+	bool update(NodeManager& nodeManager);
+	bool update_item(RenderItem* ri);
+	bool update_camera(Camera* camera);
 
 private:
-	void handle_move_event(SelectedItemTransform& transform);
-	void handle_drag_event(SelectedItemTransform& transform);
-	void handle_rotate_event(SelectedItemTransform& transform);
-	void scale(SelectedItemTransform& transform, float x, float y, float z);
+	void handle_move_event(RenderItem* ri);
+	void handle_scale_event(RenderItem* ri);
+	void handle_drag_event(RenderItem* ri);
+	void handle_rotate_event(RenderItem* ri);
 
 	bool m_dragEvent;
 	SDL_Event m_event;

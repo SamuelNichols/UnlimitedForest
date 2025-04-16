@@ -20,6 +20,9 @@ public:
 
 	uint8_t create_render_item(const glm::vec3& worldPosition, const glm::vec3& rotation, const glm::vec3& scale);
 
+	Camera* get_camera(void);
+	RenderItem* get_render_item(void);
+
 private:
 	uint8_t create_id(void);
 	bool select_camera(const uint8_t& id);

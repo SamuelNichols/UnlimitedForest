@@ -4,11 +4,6 @@
 
 #include "InputHandler.h"
 
-// input vars
-const float MOVESTEP = 0.005f;
-
-const float SCALESTEP = 0.01f;
-
 
 InputHandler::InputHandler() {
 	m_dragEvent = false;
@@ -20,6 +15,10 @@ InputHandler::~InputHandler() {}
 // called on main loop
 bool InputHandler::update(NodeManager& nm) {
 	while (SDL_PollEvent(&m_event)) {
+		if (m_event.type == SDL_QUIT) {
+			std::cout << "User exited program. Terminating..." << std::endl;
+			return false;
+		}
 		if (m_event.type == SDL_KEYDOWN && !m_event.key.repeat) {
 			if (m_event.key.keysym.scancode == SDL_SCANCODE_BACKSLASH) {
 				++m_currItem;
@@ -38,49 +37,39 @@ bool InputHandler::update(NodeManager& nm) {
 				}
 			}
 		}
-	}
-	Camera* cam = nullptr;
-	RenderItem* ri = nullptr;
-	switch (m_currItem)
-	{
-	case ITEM:
-		ri = nm.get_render_item();
-		if (ri) {
-			return InputHandler::update_item(ri);
+		if (m_currItem == ITEM) {
+			RenderItem* ri = nullptr;
+			ri = nm.get_render_item();
+			if (ri) {
+				return InputHandler::update_item(ri);
+			}
+			return false;
 		}
-		return false;
-		break;
-	case CAMERA:
-		cam = nm.get_camera();
-		if (cam) {
-			return InputHandler::update_camera(cam);
+		else if (m_currItem == CAMERA) {
+			Camera* cam = nullptr;
+			cam = nm.get_camera();
+			if (cam) {
+				return InputHandler::update_camera(cam);
+			}
+			return false;
+
 		}
-		return false;
-		break;
-	default:
-		break;
 	}
-	return false;
+	return true;
 }
 
 // -------------------------------- update item flow ---------------------------------------------
 
 bool InputHandler::update_item(RenderItem* ri) {
-	while (SDL_PollEvent(&m_event) != 0) {
-		if (m_event.type == SDL_QUIT) {
-			std::cout << "User exited program. Terminating..." << std::endl;
-			return false;
-		}
-		else if (m_event.type == SDL_MOUSEBUTTONDOWN && m_event.button.button == SDL_BUTTON_LEFT) {
-			m_dragEvent = true;
-		}
-		else if (m_event.type == SDL_MOUSEBUTTONUP && m_event.button.button == SDL_BUTTON_LEFT) {
-			m_dragEvent = false;
-		}
-		else if (m_event.type == SDL_MOUSEMOTION) {
-			m_mouseMotion.x = m_event.motion.xrel;
-			m_mouseMotion.y = m_event.motion.yrel;
-		}
+	if (m_event.button.button == SDL_BUTTON_LEFT && m_event.type == SDL_MOUSEBUTTONDOWN) {
+		m_dragEvent = true;
+	}
+	else if (m_event.button.button == SDL_BUTTON_LEFT && m_event.type == SDL_MOUSEBUTTONUP) {
+		m_dragEvent = false;
+	}
+	else if (m_event.type == SDL_MOUSEMOTION) {
+		m_mouseMotion.x = m_event.motion.xrel;
+		m_mouseMotion.y = m_event.motion.yrel;
 	}
 	m_keyState = SDL_GetKeyboardState(NULL);
 	if (m_dragEvent) {
@@ -91,7 +80,6 @@ bool InputHandler::update_item(RenderItem* ri) {
 	}
 	handle_move_event(ri);
 	handle_scale_event(ri);
-	// make sure to not exit loop (this solution doesn't feel good)
 	return true;
 }
 
@@ -117,16 +105,16 @@ void InputHandler::handle_move_event(RenderItem* ri) {
 		transform.z += MOVESTEP;
 	}
 	// apply the transform to the render object
-	ri->translate(transform);
+	if (transform.x != 0.0f || transform.y != 0.0f || transform.z != 0) {
+		ri->translate(transform);
+	}
 }
 
 void InputHandler::handle_scale_event(RenderItem* ri) {
 	if (m_keyState[SDL_SCANCODE_LALT] && m_keyState[SDL_SCANCODE_EQUALS]) {
-		std::cout << "scale up " << std::endl;
 		ri->scale(glm::vec3(SCALESTEP, SCALESTEP, SCALESTEP));
 	}
 	if (m_keyState[SDL_SCANCODE_LALT] && m_keyState[SDL_SCANCODE_MINUS]) {
-		std::cout << "scale down " << std::endl;
 		ri->scale(glm::vec3(-SCALESTEP, -SCALESTEP, -SCALESTEP));
 	}
 }
@@ -143,8 +131,9 @@ void InputHandler::handle_rotate_event(RenderItem* ri) {
 	rotation.x += m_mouseMotion.y;
 	m_mouseMotion.y = 0;
 	// TODO: handle z rotate one day
-
-	ri->rotate(rotation);
+	if(rotation.x != 0.0f || rotation.y != 0.0f || rotation.z != 0.0f) {
+		ri->rotate(rotation);
+	}
 }
 
 // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv end update item vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -152,33 +141,48 @@ void InputHandler::handle_rotate_event(RenderItem* ri) {
 // -------------------------------- update camera flow -------------------------------------------
 
 bool InputHandler::update_camera(Camera* camera) {
-	// TODO: handle camera input
 	m_keyState = SDL_GetKeyboardState(NULL);
+
+	static float mX = g_screenWidth / 2;
+	static float mY = g_screenHeight / 2;
+	
+	if (m_event.type == SDL_MOUSEMOTION) {
+		mX += (m_event.motion.xrel * sensitivity);
+		mY += (m_event.motion.yrel * sensitivity);
+		camera->mouse_look(glm::vec2(mX , mY));
+	}
+
+	handle_camera_move(camera);
+
+	return true;
+}
+
+void InputHandler::handle_camera_move(Camera* camera) {
+	glm::vec3 translation(0.0f, 0.0f, 0.0f);
+
 	if (m_keyState[SDL_SCANCODE_DOWN]) {
-		std::cout << "cam move down" << std::endl;
-		camera->translate_y(-MOVESTEP);
+		camera->move_backward(MOVESTEP);
 	}
 	if (m_keyState[SDL_SCANCODE_UP]) {
-		std::cout << "cam move up" << std::endl;
-		camera->translate_y(MOVESTEP);
+		camera->move_forward(MOVESTEP);
 	}
 	if (m_keyState[SDL_SCANCODE_LEFT]) {
-		std::cout << "cam move left" << std::endl;
-		camera->translate_x(-MOVESTEP);
+		camera->move_left(MOVESTEP);
 	}
 	if (m_keyState[SDL_SCANCODE_RIGHT]) {
-		std::cout << "cam move right" << std::endl;
-		camera->translate_x(MOVESTEP);
+		camera->move_right(MOVESTEP);
 	}
 	if (m_keyState[SDL_SCANCODE_LSHIFT]) {
-		std::cout << "cam move forward" << std::endl;
-		camera->translate_z(-MOVESTEP);
+		camera->move_down(MOVESTEP);
 	}
 	if (m_keyState[SDL_SCANCODE_SPACE]) {
-		std::cout << "cam move back" << std::endl;
-		camera->translate_z(MOVESTEP);
+		camera->move_up(MOVESTEP);
 	}
-	return true;
+
+	if (translation.x != 0.0f || translation.y != 0.0f || translation.z != 0.0f) {
+		camera->translate(translation);
+	}
+
 }
 
 // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv end camera item vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv

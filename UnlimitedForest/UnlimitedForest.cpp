@@ -14,16 +14,17 @@
 #include <string>
 #include <filesystem>	
 #include <initializer_list>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 
-#include "spdlog/spdlog.h"
-#include "spdlog/async.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
+#define GLM_ENABLE_EXPERIMENTAL
 
 #include <glm/glm.hpp>
 #include <glm/matrix.hpp>
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 
 // screen globals
@@ -51,35 +52,22 @@ SelectedItemTransform g_selectedItemTransform;
 // global for now since rendering is still in main process
 NodeManager g_nodeManager;
 
-// camera
-Camera g_mainCam(0);
+//global logging object
+std::shared_ptr<spdlog::logger> g_infoLogger = nullptr;
+std::shared_ptr<spdlog::logger> g_errorLogger = nullptr;
 
+void initialize_logger() {
+	// create a color multi-threaded logger
+	g_infoLogger = spdlog::stdout_color_mt("console");
+	g_errorLogger = spdlog::stderr_color_mt("stderr");
+}
 
 void catch_gl_error(const std::string& errorMessage) {
 	GLenum error = glGetError();
 	if (error != GL_NO_ERROR) {
-		std::cerr << errorMessage << "\nError " << " : " << error << std::endl;
+		//std::cerr << errorMessage << "\nError " << " : " << error << std::endl;
+		g_errorLogger->error("Error : {}\n", errorMessage);
 	}
-}
-
-void initialize_logger()
-{
-	// 1) Initialize the spdlog thread pool (required for async logging).
-	const size_t queue_size = 8192;
-	const size_t num_threads = 1;
-	spdlog::init_thread_pool(queue_size, num_threads);
-
-	// 2) Create an asynchronous logger that writes to the color console (stdout).
-	auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-	auto async_console = std::make_shared<spdlog::async_logger>(
-		"async_console",
-		console_sink,
-		spdlog::thread_pool::instance(),
-		spdlog::async_overflow_policy::block
-	);
-
-	// 3) Register the logger so we can retrieve it elsewhere by name if we want.
-	spdlog::register_logger(async_console);
 }
 
 void initialize_program() {
@@ -117,6 +105,10 @@ void initialize_program() {
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(1.0f, 1.0f, 1.0f)
 	);
+
+	// keep mouse in center
+	SDL_WarpMouseInWindow(g_graphicsApplicationWindow, g_screenWidth / 2, g_screenHeight / 2);
+	SDL_SetRelativeMouseMode(SDL_TRUE);
 }
 
 void vertex_specification() {
@@ -320,7 +312,7 @@ void predraw() {
 		exit(EXIT_FAILURE);
 	}
 
-	glm::mat4 view = g_mainCam.get_view_matrix();
+	glm::mat4 view = camera->get_view_matrix();
 
 	GLint u_ViewMatrixLocation = glGetUniformLocation(g_graphicsPipelineShaderProgram, "u_ViewMatrix");
 	if (u_ViewMatrixLocation >= 0) {
@@ -364,10 +356,16 @@ void draw() {
 }
 
 void get_opengl_version_info() {
-	std::cout << "Vendor: " << glGetString(GL_VENDOR) << std::endl;
-	std::cout << "Renderer: " << glGetString(GL_RENDERER) << std::endl;
-	std::cout << "Version: " << glGetString(GL_VERSION) << std::endl;
-	std::cout << "Shading Language: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+	const char* vendor = reinterpret_cast<const char*>(glGetString(GL_VENDOR));
+	const char* renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
+	const char* version = reinterpret_cast<const char*>(glGetString(GL_VERSION));
+	const char* glsl = reinterpret_cast<const char*>(glGetString(GL_SHADING_LANGUAGE_VERSION));
+	g_infoLogger->info("\nVendor: {}\nRenderer: {}\nVersion: {}\nShading Language: {}\n",
+		vendor,
+		renderer,
+		version,
+		glsl
+	);
 }
 
 std::string load_shader_as_string(const std::string& filename) {
@@ -387,6 +385,7 @@ std::string load_shader_as_string(const std::string& filename) {
 }
 
 int main(int argc, char* argv[]) {
+	initialize_logger();
 	initialize_program();
 	vertex_specification();
 	create_graphics_pipeline();

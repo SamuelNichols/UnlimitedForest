@@ -5,6 +5,18 @@
 #include <camera/Camera.h>
 #include <render_item/RenderItem.h>
 
+//global logging object
+#include <spdlog/spdlog.h>
+extern std::shared_ptr<spdlog::logger> g_infoLogger;
+extern std::shared_ptr<spdlog::logger> g_errorLogger;
+
+extern int g_screenWidth;
+extern int g_screenHeight;
+
+// input vars
+const float MOVESTEP = 0.01f;
+const float SCALESTEP = 0.01f;
+constexpr float sensitivity = 0.333f;
 
 // selected item manager, really TODO type shit
 enum SELECTED
@@ -54,6 +66,8 @@ private:
 	void handle_scale_event(RenderItem* ri);
 	void handle_drag_event(RenderItem* ri);
 	void handle_rotate_event(RenderItem* ri);
+
+	void handle_camera_move(Camera* cam);
 
 	bool m_dragEvent;
 	SDL_Event m_event;

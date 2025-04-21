@@ -9,6 +9,8 @@ if (POLICY CMP0141)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
+include(FetchContent) 
+
 # define project
 project ("UnlimitedForest")
 
@@ -18,6 +20,3 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Include sub-projects.
 add_subdirectory ("UnlimitedForest")
-
-# third_party
-add_subdirectory(third_party/spdlog)

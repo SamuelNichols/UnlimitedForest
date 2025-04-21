@@ -1,10 +1,19 @@
 #ifndef camera_h
 #define camera_h
 
+#define GLM_ENABLE_EXPERIMENTAL
+
+#include <glm/gtx/string_cast.hpp>
 #include <glm/glm.hpp>
 #include <cstdint>
+#include <mutex>
 
 #include <node/Node.h>
+
+//global logging object
+#include <spdlog/spdlog.h>
+extern std::shared_ptr<spdlog::logger> g_infoLogger;
+extern std::shared_ptr<spdlog::logger> g_errorLogger;
 
 class Camera : public Node {
 public:
@@ -13,17 +22,29 @@ public:
 	~Camera();
 
 	//ultimate view matrix
-	glm::mat4 get_view_matrix() const;
+	glm::mat4 get_view_matrix();
 
-	void set_location(glm::vec3 loc);
-	void translate_x(float t);
-	void translate_y(float t);
-	void translate_z(float t);
+	void set_location(const glm::vec3& loc);
+	void translate(const glm::vec3& translation);
+	void move_forward(const float& speed);
+	void move_backward(const float& speed);
+	void move_left(const float& speed);
+	void move_right(const float& speed);
+	void move_up(const float& speed);
+	void move_down(const float& speed);
+	void mouse_look(const glm::vec2& mouse);
+
+	void print(void);
 
 private:
 	glm::vec3 m_eye;
 	glm::vec3 m_viewDirection;
 	glm::vec3 m_upVector;
+
+	std::once_flag m_oldMousePosInit;
+	glm::vec2 m_oldMousePos;
+
+	glm::vec3 get_right_vector(void);
 };
 
 #endif // !camera_h

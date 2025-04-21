@@ -1,8 +1,14 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <memory>
 
 #include "node/Node.h"
+
+//global logging object
+#include <spdlog/spdlog.h>
+extern std::shared_ptr<spdlog::logger> g_infoLogger;
+extern std::shared_ptr<spdlog::logger> g_errorLogger;
 
 class RenderItem : public Node {
 public:

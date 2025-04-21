@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <initializer_list>
 
+void initialize_logger(void);
 void catch_gl_error(const std::string& errorMessage);
 void initialize_program(void);
 void vertex_specification(void);

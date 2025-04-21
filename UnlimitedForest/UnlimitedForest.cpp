@@ -3,6 +3,7 @@
 #include "UnlimitedForest.h"
 #include "core/input/InputHandler.h"
 #include "core/camera/Camera.h"
+#include "core/node_manager/NodeManager.h"
 
 #include <SDL.h>
 #include <glad/glad.h>
@@ -13,11 +14,17 @@
 #include <string>
 #include <filesystem>	
 #include <initializer_list>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <glm/glm.hpp>
 #include <glm/matrix.hpp>
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 
 // screen globals
@@ -40,18 +47,26 @@ GLuint g_vertexElementBuffer = 0;
 GLuint g_graphicsPipelineShaderProgram = 0;
 
 // offsets
-Core::SelectedItemTransform g_selectedItemTransform;
-// rotation axes
-float g_yAngle;
+SelectedItemTransform g_selectedItemTransform;
 
-// camera
-Camera g_mainCam = Camera();
+// global for now since rendering is still in main process
+NodeManager g_nodeManager;
 
+//global logging object
+std::shared_ptr<spdlog::logger> g_infoLogger = nullptr;
+std::shared_ptr<spdlog::logger> g_errorLogger = nullptr;
+
+void initialize_logger() {
+	// create a color multi-threaded logger
+	g_infoLogger = spdlog::stdout_color_mt("console");
+	g_errorLogger = spdlog::stderr_color_mt("stderr");
+}
 
 void catch_gl_error(const std::string& errorMessage) {
 	GLenum error = glGetError();
 	if (error != GL_NO_ERROR) {
-		std::cerr << errorMessage << "\nError " << " : " << error << std::endl;
+		//std::cerr << errorMessage << "\nError " << " : " << error << std::endl;
+		g_errorLogger->error("Error : {}\n", errorMessage);
 	}
 }
 
@@ -83,6 +98,17 @@ void initialize_program() {
 		std::exit(-1);
 	}
 	get_opengl_version_info();
+
+	// creating inital nodes
+	g_nodeManager.create_camera();
+	g_nodeManager.create_render_item(glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(1.0f, 1.0f, 1.0f)
+	);
+
+	// keep mouse in center
+	SDL_WarpMouseInWindow(g_graphicsApplicationWindow, g_screenWidth / 2, g_screenHeight / 2);
+	SDL_SetRelativeMouseMode(SDL_TRUE);
 }
 
 void vertex_specification() {
@@ -230,11 +256,13 @@ void create_graphics_pipeline() {
 }
 
 void main_loop() {
-	Core::InputHandler inputHandler;
+	InputHandler inputHandler;
+
 	g_running = true;
 	while (g_running) {
 
-		g_running = inputHandler.update(g_selectedItemTransform, g_mainCam);
+		g_running = inputHandler.update(g_nodeManager);
+		//bool n = g_nodeManager.update();
 
 		predraw();
 
@@ -263,14 +291,17 @@ void predraw() {
 	glUseProgram(g_graphicsPipelineShaderProgram);
 
 	// Constant rotation to object
-	g_selectedItemTransform.roty += 0.05f;
+	//g_selectedItemTransform.roty += 0.05f;
+
+	Camera* camera = g_nodeManager.get_camera();
+	RenderItem* ri = g_nodeManager.get_render_item();
 
 	// model transformation by translating our object into world space 
 	glm::mat4 model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(g_selectedItemTransform.x, g_selectedItemTransform.y, g_selectedItemTransform.z));
-	model = glm::rotate(model, glm::radians(g_selectedItemTransform.roty), glm::vec3(0.0f, 1.0f, 0.0f));
-	model = glm::rotate(model, glm::radians(g_selectedItemTransform.rotx), glm::vec3(1.0f, 0.0f, 0.0f));
-	model = glm::scale(model, glm::vec3(g_selectedItemTransform.scalex, g_selectedItemTransform.scaley, 1.0f));
+	model = glm::translate(model, glm::vec3(ri->m_worldPosition.x, ri->m_worldPosition.y, ri->m_worldPosition.z));
+	model = glm::rotate(model, glm::radians(ri->m_rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+	model = glm::rotate(model, glm::radians(ri->m_rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::scale(model, glm::vec3(ri->m_scale.x, ri->m_scale.y, 1.0f));
 
 	GLint u_ModelMatrixLocation = glGetUniformLocation(g_graphicsPipelineShaderProgram, "u_ModelMatrix");
 	if (u_ModelMatrixLocation >= 0) {
@@ -281,7 +312,7 @@ void predraw() {
 		exit(EXIT_FAILURE);
 	}
 
-	glm::mat4 view = g_mainCam.get_view_matrix();
+	glm::mat4 view = camera->get_view_matrix();
 
 	GLint u_ViewMatrixLocation = glGetUniformLocation(g_graphicsPipelineShaderProgram, "u_ViewMatrix");
 	if (u_ViewMatrixLocation >= 0) {
@@ -325,10 +356,16 @@ void draw() {
 }
 
 void get_opengl_version_info() {
-	std::cout << "Vendor: " << glGetString(GL_VENDOR) << std::endl;
-	std::cout << "Renderer: " << glGetString(GL_RENDERER) << std::endl;
-	std::cout << "Version: " << glGetString(GL_VERSION) << std::endl;
-	std::cout << "Shading Language: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+	const char* vendor = reinterpret_cast<const char*>(glGetString(GL_VENDOR));
+	const char* renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
+	const char* version = reinterpret_cast<const char*>(glGetString(GL_VERSION));
+	const char* glsl = reinterpret_cast<const char*>(glGetString(GL_SHADING_LANGUAGE_VERSION));
+	g_infoLogger->info("\nVendor: {}\nRenderer: {}\nVersion: {}\nShading Language: {}\n",
+		vendor,
+		renderer,
+		version,
+		glsl
+	);
 }
 
 std::string load_shader_as_string(const std::string& filename) {
@@ -348,6 +385,7 @@ std::string load_shader_as_string(const std::string& filename) {
 }
 
 int main(int argc, char* argv[]) {
+	initialize_logger();
 	initialize_program();
 	vertex_specification();
 	create_graphics_pipeline();

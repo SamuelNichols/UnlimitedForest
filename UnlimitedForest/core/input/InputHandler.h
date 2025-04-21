@@ -1,63 +1,78 @@
 #pragma once
 #include <SDL.h>
 #include <iostream>
+#include "node_manager/NodeManager.h"
 #include <camera/Camera.h>
+#include <render_item/RenderItem.h>
 
-namespace Core {
-    // selected item manager, really TODO type shit
-    enum SELECTED
-    {
-        ITEM,
-        CAMERA,
-        END, //end of enum list to get total number of enums for iteration
-    };
-    // function to iterate enums
-    inline SELECTED& operator++(SELECTED& s) {
-        s = static_cast<SELECTED>((static_cast<int>(s) + 1) % END);
-        return s;
-    }
+//global logging object
+#include <spdlog/spdlog.h>
+extern std::shared_ptr<spdlog::logger> g_infoLogger;
+extern std::shared_ptr<spdlog::logger> g_errorLogger;
 
-    // Define the struct in the header, so it’s visible wherever InputHandler is used
-    struct SelectedItemTransform {
-        float x = 0.0f;
-        float y = 0.0f;
-        float z = 0.0f;
+extern int g_screenWidth;
+extern int g_screenHeight;
 
-        float rotx = 0.0f;
-        float roty = 0.0f;
-        float rotz = 0.0f;
+// input vars
+const float MOVESTEP = 0.01f;
+const float SCALESTEP = 0.01f;
+constexpr float sensitivity = 0.333f;
 
-        float scalex = 1.0f;
-        float scaley = 1.0f;
-        float scalez = 1.0f;
-    };
+// selected item manager, really TODO type shit
+enum SELECTED
+{
+	ITEM,
+	CAMERA,
+	END, //end of enum list to get total number of enums for iteration
+};
+// function to iterate enums
+inline SELECTED& operator++(SELECTED& s) {
+	s = static_cast<SELECTED>((static_cast<int>(s) + 1) % END);
+	return s;
+}
 
-    struct MouseMotion {
-        int x = 0;
-        int y = 0;
-    };
+// Define the struct in the header, so it’s visible wherever InputHandler is used
+struct SelectedItemTransform {
+	float x = 0.0f;
+	float y = 0.0f;
+	float z = 0.0f;
 
-    class InputHandler {
-    public:
-        InputHandler();
-        ~InputHandler();
+	float rotx = 0.0f;
+	float roty = 0.0f;
+	float rotz = 0.0f;
 
-        // Match the function signature to what you actually need
-        bool update(SelectedItemTransform& offset, Camera& camera);
-        bool update_item(SelectedItemTransform& offset);
-        bool update_camera(Camera& camera);
+	float scalex = 1.0f;
+	float scaley = 1.0f;
+	float scalez = 1.0f;
+};
 
-    private:
-        void handle_move_event(SelectedItemTransform& transform);
-        void handle_drag_event(SelectedItemTransform& transform);
-        void handle_rotate_event(SelectedItemTransform& transform);
-        void scale(SelectedItemTransform& transform, float x, float y, float z);
+struct MouseMotion {
+	int x = 0;
+	int y = 0;
+};
 
-        bool m_dragEvent;
-        SDL_Event m_event;
-        const Uint8* m_keyState;
-        MouseMotion m_mouseMotion;
-        SELECTED m_currItem;
-    };
+class InputHandler {
+public:
+	InputHandler();
+	~InputHandler();
 
-}  // namespace Core
+	// Match the function signature to what you actually need
+	bool update(NodeManager& nodeManager);
+	bool update_item(RenderItem* ri);
+	bool update_camera(Camera* camera);
+
+private:
+	void handle_move_event(RenderItem* ri);
+	void handle_scale_event(RenderItem* ri);
+	void handle_drag_event(RenderItem* ri);
+	void handle_rotate_event(RenderItem* ri);
+
+	void handle_camera_move(Camera* cam);
+
+	bool m_dragEvent;
+	SDL_Event m_event;
+	const Uint8* m_keyState;
+	MouseMotion m_mouseMotion;
+	SELECTED m_currItem;
+};
+

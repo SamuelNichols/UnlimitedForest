@@ -34,6 +34,7 @@ find_package(OpenGL REQUIRED)
 
 # Link SDL2 and OpenGL
 target_link_libraries(UnlimitedForest
+	# external deps
 	${SDL2_LIB_DIR}/SDL2.lib
 	${SDL2_LIB_DIR}/SDL2main.lib
 	OpenGL::GL
@@ -65,3 +66,13 @@ add_custom_target(copy_shaders ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/shaders)
 
 # Make your executable depend on the copy_shaders target.
 add_dependencies(UnlimitedForest copy_shaders)
+
+# 2. Declare spdlog repository and tag (use latest v1.15.2)
+FetchContent_Declare(
+  spdlog
+  GIT_REPOSITORY https://github.com/gabime/spdlog.git
+  GIT_TAG        v1.15.2
+)
+FetchContent_MakeAvailable(spdlog) 
+target_link_libraries(UnlimitedForest spdlog::spdlog)
+

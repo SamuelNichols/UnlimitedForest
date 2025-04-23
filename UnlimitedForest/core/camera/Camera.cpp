@@ -3,9 +3,9 @@
 #include <glm/gtx/rotate_vector.hpp>
 
 //default constructor places camera at z 2 (positive towards you) and view focus at -1 to ensure facing out to the negative
-Camera::Camera(const uint8_t& id) : Camera(id, glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0, 0.0)) {}
+Camera::Camera(App& app, const uint8_t& id) : Camera(app, id, glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0, 0.0)) {}
 
-Camera::Camera(const uint8_t& id, const glm::vec3& eye, const glm::vec3& viewDirection, const glm::vec3& up) : Node(id) {
+Camera::Camera(App& app, const uint8_t& id, const glm::vec3& eye, const glm::vec3& viewDirection, const glm::vec3& up) : Node(id), m_app(app) {
 	m_eye = eye;
 	m_viewDirection = glm::normalize(viewDirection);
 	m_upVector = glm::normalize(up);
@@ -16,6 +16,15 @@ Camera::~Camera() {}
 glm::mat4 Camera::get_view_matrix() {
 	// TODO: add a scale variable to allow the view point to be further than 1 (since it is a unit vector)
 	return glm::lookAt(m_eye, m_eye + m_viewDirection, m_upVector);
+}
+
+// Projection matrix (in perspective)
+glm::mat4 Camera::get_perspective_matrix() {
+	return glm::perspective(glm::radians(45.0f),
+		(float)m_app.m_screenWidth / (float)m_app.m_screenHeight,
+		0.1f,
+		100.0f
+	);
 }
 
 void Camera::set_location(const glm::vec3& loc) {

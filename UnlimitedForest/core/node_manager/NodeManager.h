@@ -3,9 +3,12 @@
 #include <glm/glm.hpp>
 #include <vector>
 
+#include <../UnlimitedForest.h>
 #include <node/Node.h>
 #include <render_item/RenderItem.h>
 #include <camera/Camera.h>
+
+struct App;
 
 class NodeManager {
 public:
@@ -24,6 +27,8 @@ public:
 	RenderItem* get_render_item(void);
 
 private:
+	App& m_app;
+
 	uint8_t create_id(void);
 	bool select_camera(const uint8_t& id);
 	bool select_render_item(const uint8_t& id);

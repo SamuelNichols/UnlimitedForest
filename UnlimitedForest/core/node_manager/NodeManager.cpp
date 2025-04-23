@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-NodeManager::NodeManager() {}
+NodeManager::NodeManager(App& app) : m_app(app) {}
 
 NodeManager::~NodeManager() {
 	for (int i = 0, s = m_nodes.size(); i < s; i++) {
@@ -21,7 +21,7 @@ uint8_t NodeManager::create_id() {
 
 uint8_t NodeManager::create_camera() {
 	uint8_t newId = create_id();
-	Camera* newCam = new Camera(newId);
+	Camera* newCam = new Camera(m_app, newId);
 	m_nodes.emplace_back(newCam);
 	m_cameras.emplace_back(newId);
 	if (!m_selectedCamera) {
@@ -32,7 +32,7 @@ uint8_t NodeManager::create_camera() {
 
 uint8_t NodeManager::create_camera(const glm::vec3& eye, const glm::vec3& viewDirection, const glm::vec3& up) {
 	uint8_t newId = create_id();
-	Camera* newCam = new Camera(newId, eye, viewDirection, up);
+	Camera* newCam = new Camera(m_app, newId, eye, viewDirection, up);
 	m_nodes.emplace_back(newCam);
 	m_cameras.emplace_back(newId);
 	if (!m_selectedCamera) {

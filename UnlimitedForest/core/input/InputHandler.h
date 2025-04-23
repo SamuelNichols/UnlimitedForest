@@ -10,9 +10,6 @@
 extern std::shared_ptr<spdlog::logger> g_infoLogger;
 extern std::shared_ptr<spdlog::logger> g_errorLogger;
 
-extern int g_screenWidth;
-extern int g_screenHeight;
-
 // input vars
 const float MOVESTEP = 0.01f;
 const float SCALESTEP = 0.01f;
@@ -57,9 +54,9 @@ public:
 	~InputHandler();
 
 	// Match the function signature to what you actually need
-	bool update(NodeManager& nodeManager);
+	bool update(NodeManager& nodeManager, const int& screenWidth, const int& screenHeight);
 	bool update_item(RenderItem* ri);
-	bool update_camera(Camera* camera);
+	bool update_camera(Camera* camera, const int& screenWidth, const int& screenHeight);
 
 private:
 	void handle_move_event(RenderItem* ri);

@@ -2,18 +2,21 @@
 
 #include <glm/glm.hpp>
 #include <memory>
+#include <glad/glad.h>
 
 #include "node/Node.h"
-
-//global logging object
+#include "logging/Logging.h"
 #include <spdlog/spdlog.h>
-extern std::shared_ptr<spdlog::logger> g_infoLogger;
-extern std::shared_ptr<spdlog::logger> g_errorLogger;
+extern Loggers g_loggers;
 
 class RenderItem : public Node {
 public:
 	RenderItem(const uint8_t& id, const glm::vec3& worldPosition, const glm::vec3& rotation, const glm::vec3& scale);
 	~RenderItem() {};
+
+	void mesh_specification(void);
+	void predraw(void);
+	void draw(void);
 
 	void translate(const glm::vec3& translation);
 	void rotate(const glm::vec3& eulerAngles);
@@ -28,4 +31,12 @@ public:
 	glm::vec3 m_worldPosition;
 	glm::vec3 m_rotation;
 	glm::vec3 m_scale;
+	// render pointers
+	// OpenGL VAO
+	GLuint m_vertexArrayObject = 0;
+	// OpenGL VBO
+	GLuint m_vertexBufferObject = 0;
+	// index buffer for reusing shared indecies of triangles
+	GLuint m_vertexElementBuffer = 0;
+
 };

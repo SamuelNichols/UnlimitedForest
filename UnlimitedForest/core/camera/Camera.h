@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <mutex>
 
+#include <../UnlimitedForest.h>
 #include <node/Node.h>
 
 //global logging object
@@ -15,14 +16,17 @@
 extern std::shared_ptr<spdlog::logger> g_infoLogger;
 extern std::shared_ptr<spdlog::logger> g_errorLogger;
 
+struct App;
+
 class Camera : public Node {
 public:
-	Camera(const uint8_t& id);
-	Camera(const uint8_t& id, const glm::vec3 &eye,const glm::vec3 &viewDirectio, const glm::vec3 &up);
+	Camera(App& app, const uint8_t& id);
+	Camera(App& app, const uint8_t& id, const glm::vec3 &eye,const glm::vec3 &viewDirectio, const glm::vec3 &up);
 	~Camera();
 
 	//ultimate view matrix
-	glm::mat4 get_view_matrix();
+	glm::mat4 get_view_matrix(void);
+	glm::mat4 get_perspective_matrix(void);
 
 	void set_location(const glm::vec3& loc);
 	void translate(const glm::vec3& translation);
@@ -37,6 +41,8 @@ public:
 	void print(void);
 
 private:
+	App& m_app;
+
 	glm::vec3 m_eye;
 	glm::vec3 m_viewDirection;
 	glm::vec3 m_upVector;

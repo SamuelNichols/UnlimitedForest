@@ -57,9 +57,9 @@ public:
 	~InputHandler();
 
 	// Match the function signature to what you actually need
-	bool update(NodeManager& nodeManager);
+	bool update(void);
 	bool update_item(RenderItem* ri);
-	bool update_camera(Camera* camera);
+	bool update_camera(Camera* camera, int sWidth, int sHieght);
 
 private:
 	void handle_move_event(RenderItem* ri);

@@ -15,7 +15,6 @@
 #include <filesystem>	
 #include <initializer_list>
 #include <spdlog/spdlog.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
 
 #define GLM_ENABLE_EXPERIMENTAL
 
@@ -26,16 +25,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/string_cast.hpp>
 
-
-// screen globals
-int g_screenWidth = 640;
-int g_screenHeight = 480;
-SDL_Window* g_graphicsApplicationWindow = nullptr;
-SDL_GLContext g_openGLContext;
-
-// engine loop
-bool g_running = false;
-
 // OpenGL globals
 // OpenGL VAO
 GLuint g_vertexArrayObject = 0;
@@ -43,72 +32,19 @@ GLuint g_vertexArrayObject = 0;
 GLuint g_vertexBufferObject = 0;
 // index buffer for reusing shared indecies of triangles
 GLuint g_vertexElementBuffer = 0;
-// program object for shaders
-GLuint g_graphicsPipelineShaderProgram = 0;
 
 // offsets
 SelectedItemTransform g_selectedItemTransform;
-
-// global for now since rendering is still in main process
-NodeManager g_nodeManager;
 
 //global logging object
 std::shared_ptr<spdlog::logger> g_infoLogger = nullptr;
 std::shared_ptr<spdlog::logger> g_errorLogger = nullptr;
 
-void initialize_logger() {
-	// create a color multi-threaded logger
-	g_infoLogger = spdlog::stdout_color_mt("console");
-	g_errorLogger = spdlog::stderr_color_mt("stderr");
-}
-
 void catch_gl_error(const std::string& errorMessage) {
 	GLenum error = glGetError();
 	if (error != GL_NO_ERROR) {
-		//std::cerr << errorMessage << "\nError " << " : " << error << std::endl;
-		g_errorLogger->error("Error : {}\n", errorMessage);
+		g_errorLogger->error("GLError [{}] : {}\n", error, errorMessage);
 	}
-}
-
-void initialize_program() {
-	//initializing sdl video component
-	assert(SDL_Init(SDL_INIT_VIDEO) >= 0);
-
-	// opengl version 4.1
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
-	// only allowing non-depricated functionality
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	// render flags
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-
-	// creating the window handler
-	g_graphicsApplicationWindow = SDL_CreateWindow("Unlimited Forest", 100, 100, g_screenWidth, g_screenHeight, SDL_WINDOW_OPENGL);
-	assert(g_graphicsApplicationWindow);
-
-	// initializing opengl context
-	g_openGLContext = SDL_GL_CreateContext(g_graphicsApplicationWindow);
-	assert(g_openGLContext);
-
-	// init glad, loading OpenGL function pointers
-	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
-		std::cerr << "Failed to initialize GLAD" << std::endl;
-		cleanup();
-		std::exit(-1);
-	}
-	get_opengl_version_info();
-
-	// creating inital nodes
-	g_nodeManager.create_camera();
-	g_nodeManager.create_render_item(glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(1.0f, 1.0f, 1.0f)
-	);
-
-	// keep mouse in center
-	SDL_WarpMouseInWindow(g_graphicsApplicationWindow, g_screenWidth / 2, g_screenHeight / 2);
-	SDL_SetRelativeMouseMode(SDL_TRUE);
 }
 
 void vertex_specification() {
@@ -183,118 +119,45 @@ void vertex_specification() {
 	catch_gl_error("error loading VEO");
 }
 
-GLuint compile_shader(GLuint type, const std::string& source) {
-	GLuint shaderObject = glCreateShader(type);
-	const char* src = source.c_str();
-	glShaderSource(shaderObject, 1, &src, nullptr);
-	glCompileShader(shaderObject);
-
-	catch_gl_error("error compiling shader object");
-
-	// Check if compilation succeeded
-	GLint status;
-	glGetShaderiv(shaderObject, GL_COMPILE_STATUS, &status);
-	if (status == GL_FALSE) {
-		GLint length;
-		glGetShaderiv(shaderObject, GL_INFO_LOG_LENGTH, &length);
-		std::vector<char> log(length);
-		glGetShaderInfoLog(shaderObject, length, nullptr, log.data());
-		std::cerr << "Shader compilation failed (type "
-			<< (type == GL_VERTEX_SHADER ? "vertex" : "fragment")
-			<< "): " << log.data() << std::endl;
-		glDeleteShader(shaderObject);
-		return 0;
-	}
-
-	return shaderObject;
-}
-
-GLuint create_shader_program(const std::string& vertexShaderSource, const std::string& fragmentShaderSource) {
-	GLuint programObject = glCreateProgram();
-
-	GLuint myVertexShader = compile_shader(GL_VERTEX_SHADER, vertexShaderSource);
-	GLuint myFragmentShader = compile_shader(GL_FRAGMENT_SHADER, fragmentShaderSource);
-
-	if (!myVertexShader || !myFragmentShader) {
-		glDeleteProgram(programObject);
-		std::cerr << "Failed to build shader program" << std::endl;
-		return 0;
-	}
-
-	glAttachShader(programObject, myVertexShader);
-	glAttachShader(programObject, myFragmentShader);
-	glLinkProgram(programObject);
-
-	// Check if linking succeeded
-	GLint status;
-	glGetProgramiv(programObject, GL_LINK_STATUS, &status);
-	if (status == GL_FALSE) {
-		GLint length;
-		glGetProgramiv(programObject, GL_INFO_LOG_LENGTH, &length);
-		std::vector<char> log(length);
-		glGetProgramInfoLog(programObject, length, nullptr, log.data());
-		std::cerr << "Program linking failed: " << log.data() << std::endl;
-		glDeleteProgram(programObject);
-		return 0;
-	}
-
-	// Clean up
-	glDetachShader(programObject, myVertexShader);
-	glDetachShader(programObject, myFragmentShader);
-	glDeleteShader(myVertexShader);
-	glDeleteShader(myFragmentShader);
-
-	return programObject;
-}
-
-void create_graphics_pipeline() {
-	const std::string vertexShaderSource = load_shader_as_string(make_relative_path("shaders", "vert.glsl"));
-	const std::string fragmentShaderSource = load_shader_as_string(make_relative_path("shaders", "frag.glsl"));
-	g_graphicsPipelineShaderProgram = create_shader_program(vertexShaderSource, fragmentShaderSource);
-
-	catch_gl_error("error creating graphics pipeline");
-}
-
-void main_loop() {
+void main_loop(App& app) {
 	InputHandler inputHandler;
 
-	g_running = true;
-	while (g_running) {
+	app.start();
 
-		g_running = inputHandler.update(g_nodeManager);
-		//bool n = g_nodeManager.update();
+	while (app.is_running()) {
 
-		predraw();
+		if (!inputHandler.update()) {
+			app.stop();
+		}
+
+		predraw(app);
 
 		draw();
 
-		// update the window
-		SDL_GL_SwapWindow(g_graphicsApplicationWindow);
+		// swap double buffer / update window
+		SDL_GL_SwapWindow(app.get_graphics_application_window());
 	}
 }
 
-void cleanup() {
-	// cleanup sdl window and opengl context
-	SDL_GL_DeleteContext(g_openGLContext);
-	SDL_DestroyWindow(g_graphicsApplicationWindow);
-	SDL_Quit();
-}
-
-void predraw() {
+void predraw(App& app) {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
-
-	glViewport(0, 0, g_screenWidth, g_screenHeight);
+	
+	EngineConfig cfg = app.get_engine_config();
+	glViewport(0, 0, cfg.m_screenWidth, cfg.m_screenHeight);
+	catch_gl_error("screen init error");
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-	glUseProgram(g_graphicsPipelineShaderProgram);
+	GLuint gp = app.get_graphics_pipeline_shader_program();
+
+	glUseProgram(gp);
 
 	// Constant rotation to object
 	//g_selectedItemTransform.roty += 0.05f;
-
-	Camera* camera = g_nodeManager.get_camera();
-	RenderItem* ri = g_nodeManager.get_render_item();
+	NodeManager* nm = app.get_node_manager();
+	Camera* camera = nm->get_camera();
+	RenderItem* ri = nm->get_render_item();
 
 	// model transformation by translating our object into world space 
 	glm::mat4 model = glm::mat4(1.0f);
@@ -303,7 +166,7 @@ void predraw() {
 	model = glm::rotate(model, glm::radians(ri->m_rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
 	model = glm::scale(model, glm::vec3(ri->m_scale.x, ri->m_scale.y, 1.0f));
 
-	GLint u_ModelMatrixLocation = glGetUniformLocation(g_graphicsPipelineShaderProgram, "u_ModelMatrix");
+	GLint u_ModelMatrixLocation = glGetUniformLocation(gp, "u_ModelMatrix");
 	if (u_ModelMatrixLocation >= 0) {
 		glUniformMatrix4fv(u_ModelMatrixLocation, 1, GL_FALSE, &model[0][0]);
 	}
@@ -314,7 +177,7 @@ void predraw() {
 
 	glm::mat4 view = camera->get_view_matrix();
 
-	GLint u_ViewMatrixLocation = glGetUniformLocation(g_graphicsPipelineShaderProgram, "u_ViewMatrix");
+	GLint u_ViewMatrixLocation = glGetUniformLocation(gp, "u_ViewMatrix");
 	if (u_ViewMatrixLocation >= 0) {
 		glUniformMatrix4fv(u_ViewMatrixLocation, 1, GL_FALSE, &view[0][0]);
 	}
@@ -325,12 +188,12 @@ void predraw() {
 
 	// Projection matrix (in perspective)
 	glm::mat4 perspective = glm::perspective(glm::radians(45.0f),
-		(float)g_screenWidth / (float)g_screenHeight,
+		(float)cfg.m_screenWidth / (float)cfg.m_screenHeight,
 		0.1f,
 		100.0f
 	);
 
-	GLint u_PerspectiveLocation = glGetUniformLocation(g_graphicsPipelineShaderProgram, "u_Perspective");
+	GLint u_PerspectiveLocation = glGetUniformLocation(gp, "u_Perspective");
 	if (u_PerspectiveLocation >= 0) {
 		glUniformMatrix4fv(u_PerspectiveLocation, 1, GL_FALSE, &perspective[0][0]);
 	}
@@ -355,41 +218,13 @@ void draw() {
 	glUseProgram(0);
 }
 
-void get_opengl_version_info() {
-	const char* vendor = reinterpret_cast<const char*>(glGetString(GL_VENDOR));
-	const char* renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
-	const char* version = reinterpret_cast<const char*>(glGetString(GL_VERSION));
-	const char* glsl = reinterpret_cast<const char*>(glGetString(GL_SHADING_LANGUAGE_VERSION));
-	g_infoLogger->info("\nVendor: {}\nRenderer: {}\nVersion: {}\nShading Language: {}\n",
-		vendor,
-		renderer,
-		version,
-		glsl
-	);
-}
-
-std::string load_shader_as_string(const std::string& filename) {
-	// Open the file
-	std::ifstream file(filename);
-	if (!file.is_open()) {
-		std::cerr << "Error: could not open file: " << filename << std::endl;
-		return "";
-	}
-
-	// Use a string stream to read the file contents
-	std::stringstream shaderStream;
-	shaderStream << file.rdbuf();
-
-	// No need to manually close, as the ifstream destructor will handle it.
-	return shaderStream.str();
-}
-
 int main(int argc, char* argv[]) {
-	initialize_logger();
-	initialize_program();
+	App app;
+
+	// TODO: vertext spec within render object
 	vertex_specification();
-	create_graphics_pipeline();
-	main_loop();
-	cleanup();
+
+	main_loop(app);
+
 	return 0;
 }

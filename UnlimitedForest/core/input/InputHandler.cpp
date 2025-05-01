@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "InputHandler.h"
+#include "../core/application/App.h"
 
 
 InputHandler::InputHandler() {
@@ -13,7 +14,9 @@ InputHandler::InputHandler() {
 InputHandler::~InputHandler() {}
 
 // called on main loop
-bool InputHandler::update(NodeManager& nm) {
+bool InputHandler::update() {
+	App* app = App::get();
+	NodeManager* nm = app->get_node_manager();
 	while (SDL_PollEvent(&m_event)) {
 		if (m_event.type == SDL_QUIT) {
 			std::cout << "User exited program. Terminating..." << std::endl;
@@ -39,17 +42,18 @@ bool InputHandler::update(NodeManager& nm) {
 		}
 		if (m_currItem == ITEM) {
 			RenderItem* ri = nullptr;
-			ri = nm.get_render_item();
+			ri = nm->get_render_item();
 			if (ri) {
 				return InputHandler::update_item(ri);
 			}
 			return false;
 		}
 		else if (m_currItem == CAMERA) {
+			EngineConfig cfg = app->get_engine_config();
 			Camera* cam = nullptr;
-			cam = nm.get_camera();
+			cam = nm->get_camera();
 			if (cam) {
-				return InputHandler::update_camera(cam);
+				return InputHandler::update_camera(cam, cfg.m_screenWidth, cfg.m_screenHeight);
 			}
 			return false;
 
@@ -140,11 +144,11 @@ void InputHandler::handle_rotate_event(RenderItem* ri) {
 
 // -------------------------------- update camera flow -------------------------------------------
 
-bool InputHandler::update_camera(Camera* camera) {
+bool InputHandler::update_camera(Camera* camera, int sWidth, int sHeight) {
 	m_keyState = SDL_GetKeyboardState(NULL);
 
-	static float mX = g_screenWidth / 2;
-	static float mY = g_screenHeight / 2;
+	static float mX = sWidth / 2;
+	static float mY = sHeight / 2;
 	
 	if (m_event.type == SDL_MOUSEMOTION) {
 		mX += (m_event.motion.xrel * sensitivity);

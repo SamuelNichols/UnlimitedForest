@@ -1,26 +1,10 @@
 #pragma once
 
-#include <glad/glad.h>
-#include <memory>
-#include <SDL.h>
-#include <iostream>
-#include <cassert>
-#include <vector>
-#include <fstream>
-#include <string>
-#include <filesystem>	
-#include <initializer_list>
-
-#define GLM_ENABLE_EXPERIMENTAL
-
-#include <glm/glm.hpp>
-#include <glm/matrix.hpp>
-#include <glm/vec3.hpp>
-#include <glm/mat4x4.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/string_cast.hpp>
-
 #include "node/Node.h"
+
+#include <glad/glad.h>
+#include <glm/glm.hpp>
+#include <vector>
 
 class App;        // forward
 class Camera;

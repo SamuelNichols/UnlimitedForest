@@ -3,15 +3,21 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 //default constructor places camera at z 2 (positive towards you) and view focus at -1 to ensure facing out to the negative
-Camera::Camera(const uint8_t& id) : Camera(id, glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0, 0.0)) {}
+Camera::Camera(const uint8_t& id) : 
+	Camera(id, glm::vec3(0.0f, 0.0f, 2.0f), 
+		glm::vec3(0.0f, 0.0f, -1.0f), 
+		glm::vec3(0.0f, 1.0, 0.0)) 
+{}
 
-Camera::Camera(const uint8_t& id, const glm::vec3& eye, const glm::vec3& viewDirection, const glm::vec3& up) : Node(id) {
-	m_eye = eye;
-	m_viewDirection = glm::normalize(viewDirection);
-	m_upVector = glm::normalize(up);
-}
+Camera::Camera(const uint8_t& id, const glm::vec3& eye, const glm::vec3& viewDirection, const glm::vec3& up) : 
+	Node(id), m_eye(eye), 
+	m_viewDirection(glm::normalize(viewDirection)), 
+	m_upVector(glm::normalize(up)),
+	m_oldMousePos{}
+{}
 
 Camera::~Camera() {}
 
@@ -29,7 +35,7 @@ void Camera::translate(const glm::vec3& translation) {
 }
 
 void Camera::mouse_look(const glm::vec2& mouse) {
-	UF_LOG_INFO("x: {}, y: {}\n\n", mouse.x, mouse.y);
+	UF_LOG_DEBUG("x: {}, y: {}", mouse.x, mouse.y);
 	std::call_once(m_oldMousePosInit, [this, mouse]() {
 		m_oldMousePos = mouse;
 		});
@@ -75,5 +81,9 @@ void Camera::move_down(const float& speed) {
 }
 
 void Camera::print() {
-	UF_LOG_INFO("eye: {} | view: {} | up: {}", glm::to_string(m_eye), glm::to_string(m_viewDirection), glm::to_string(m_upVector));
+	UF_LOG_DEBUG("eye: {} | view: {} | up: {}", 
+		glm::to_string(m_eye), 
+		glm::to_string(m_viewDirection), 
+		glm::to_string(m_upVector)
+	);
 }

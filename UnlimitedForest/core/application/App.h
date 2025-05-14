@@ -3,28 +3,14 @@
 #include "EngineConfig.h"
 #include "node_manager/NodeManager.h"
 #include "camera/Camera.h"
+#include "input/InputHandler.h"
 #include "log/Log.h"
 
 #include "glad/glad.h"
 #include <SDL.h>
-#include <memory>
 #include <filesystem>
 #include <initializer_list>
-#include <iostream>	
-
-#include <cassert>
-#include <vector>
-#include <fstream>
 #include <string>
-
-#define GLM_ENABLE_EXPERIMENTAL
-
-#include <glm/glm.hpp>
-#include <glm/matrix.hpp>
-#include <glm/vec3.hpp>
-#include <glm/mat4x4.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/string_cast.hpp>
 
 class App {
 public:
@@ -57,6 +43,7 @@ public:
 	void resize_window(int w, int h);
 
 private:
+	void main_loop(void);
 	void initialize_sdl(void);
 	void get_opengl_version_info(void);
 	void cleanup(void);
@@ -72,6 +59,7 @@ private:
 	SDL_GLContext m_openGLContext;
 	GLuint m_graphicsPipelineShaderProgram;
 	NodeManager m_nodeManager;
+	InputHandler m_inputHandler;
 	bool m_running;
 
 	static App* m_app;

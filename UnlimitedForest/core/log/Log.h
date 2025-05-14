@@ -9,6 +9,8 @@ public:
 
 	inline static std::shared_ptr<spdlog::logger>& getLogger() { return  s_logger; }
 
+	static void catch_gl_error(const std::string& errorMessage);
+
 private:
 	static std::shared_ptr<spdlog::logger> s_logger;
 };
@@ -19,3 +21,5 @@ private:
 #define UF_LOG_WARN(...)       ::Log::getLogger()->warn(__VA_ARGS__)
 #define UF_LOG_ERROR(...)      ::Log::getLogger()->error(__VA_ARGS__)
 #define UF_LOG_CRITICAL(...)   ::Log::getLogger()->critical(__VA_ARGS__)
+
+#define CATCH_GL_ERROR(...)    ::Log::catch_gl_error(__VA_ARGS__)

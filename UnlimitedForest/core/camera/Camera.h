@@ -1,14 +1,13 @@
-#ifndef camera_h
-#define camera_h
+#pragma once
 
-#define GLM_ENABLE_EXPERIMENTAL
+#include <node/Node.h>
 
-#include <glm/gtx/string_cast.hpp>
-#include <glm/glm.hpp>
 #include <cstdint>
 #include <mutex>
 
-#include <node/Node.h>
+#define GLM_ENABLE_EXPERIMENTAL
+
+#include <glm/glm.hpp>
 
 class Camera : public Node {
 public:
@@ -41,5 +40,3 @@ private:
 
 	glm::vec3 get_right_vector(void);
 };
-
-#endif // !camera_h

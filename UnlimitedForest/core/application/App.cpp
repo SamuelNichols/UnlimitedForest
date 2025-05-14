@@ -1,5 +1,10 @@
 #include "App.h"
 
+#include <iostream>	
+#include <cassert>
+#include <vector>
+#include <fstream>
+
 App* App::m_app = nullptr;
 
 App::App() {
@@ -76,6 +81,31 @@ void App::initialize_sdl(){
 		glm::vec3(1.0f, 1.0f, 1.0f)
 	);
 
+	m_nodeManager.create_render_item(
+		{
+			//   x      y      z// quad
+			// vec 1
+			-0.5f, -0.5f, 0.0f, // x y z bottom left
+			1.0f, 0.0f, 0.0f,   // r g b
+			// vec 2
+			0.5f, -0.5f, 0.0f,  // x y z bottom right
+			0.0f, 1.0f, 0.0f,   // r g b
+			// vec 3
+			-0.5f,  0.5f, 0.0f, // x y z top left
+			0.0f, 0.0f, 1.0f,   // r g b
+			// vec 4
+			0.5f, 0.5f, 0.0f,  // x y z top right
+			0.0f, 1.0f, 0.0f,   // r g b
+		},
+		{
+		0, 1, 2,
+		1, 3, 2
+		},
+		glm::vec3(0.0f, 0.0f, -2.0f),
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(1.0f, 1.0f, 1.0f)
+	);
+
 	// keep mouse in center
 	SDL_WarpMouseInWindow(m_graphicsApplicationWindow, m_engineConfig.m_screenWidth / 2, m_engineConfig.m_screenHeight / 2);
 	SDL_SetRelativeMouseMode(SDL_TRUE);
@@ -86,7 +116,7 @@ void App::get_opengl_version_info() {
 	const char* renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
 	const char* version = reinterpret_cast<const char*>(glGetString(GL_VERSION));
 	const char* glsl = reinterpret_cast<const char*>(glGetString(GL_SHADING_LANGUAGE_VERSION));
-	UF_LOG_INFO("\nVendor: {}\nRenderer: {}\nVersion: {}\nShading Language: {}\n",
+	UF_LOG_INFO("\nVendor: {}\nRenderer: {}\nVersion: {}\nShading Language: {}",
 		vendor,
 		renderer,
 		version,
@@ -103,6 +133,31 @@ void App::cleanup() {
 
 void App::start() {
 	m_running = true;
+	this->main_loop();
+}
+
+void App::main_loop() {
+	while (m_running) {
+		// init and clear screen per loop
+		// TODO: this should be somewhere else
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_CULL_FACE);
+
+		glViewport(0, 0, m_engineConfig.m_screenWidth, m_engineConfig.m_screenHeight);
+		CATCH_GL_ERROR("screen init error");
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+
+		if (!m_inputHandler.update()) {
+			this->stop();
+		}
+
+		this->update();
+
+		// swap double buffer / update window
+		SDL_GL_SwapWindow(this->get_graphics_application_window());
+	}
 }
 
 void App::stop() {
@@ -124,7 +179,7 @@ GLuint App::compile_shader(GLuint type, const std::string& source) {
 	glShaderSource(shaderObject, 1, &src, nullptr);
 	glCompileShader(shaderObject);
 
-	//catch_gl_error("error compiling shader object");
+	CATCH_GL_ERROR("error compiling shader object");
 
 	// Check if compilation succeeded
 	GLint status;
@@ -187,11 +242,10 @@ void App::create_graphics_pipeline() {
 	const std::string fragmentShaderSource = load_shader_as_string(make_relative_path("shaders", "frag.glsl"));
 	m_graphicsPipelineShaderProgram = create_shader_program(vertexShaderSource, fragmentShaderSource);
 
-	//catch_gl_error("error creating graphics pipeline");
+	CATCH_GL_ERROR("error creating graphics pipeline");
 }
 
 void App::resize_window(int w, int h) {
-	UF_LOG_INFO("hit {}|{}", w, h);
 	SDL_SetWindowSize(m_graphicsApplicationWindow, w, h);
 }
 

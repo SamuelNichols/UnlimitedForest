@@ -1,16 +1,9 @@
-#include <SDL.h>
-#include <iostream>
-#include <algorithm>
-
 #include "InputHandler.h"
 #include "../core/application/App.h"
 #include "log/Log.h"
 
 
-InputHandler::InputHandler() {
-	m_dragEvent = false;
-	m_currItem = ITEM;
-}
+InputHandler::InputHandler() : m_dragEvent(false), m_currItem(ITEM), m_event{}, m_keyState{} {}
 // destructor
 InputHandler::~InputHandler() {}
 
@@ -29,10 +22,10 @@ bool InputHandler::update() {
 				switch (m_currItem)
 				{
 				case ITEM:
-					UF_LOG_INFO("item selected");
+					UF_LOG_DEBUG("item selected");
 					break;
 				case CAMERA:
-					UF_LOG_INFO("camera selected");
+					UF_LOG_DEBUG("camera selected");
 					break;
 				case END:
 					break;
@@ -136,7 +129,7 @@ void InputHandler::handle_rotate_event(RenderItem* ri) {
 	rotation.x += m_mouseMotion.y;
 	m_mouseMotion.y = 0;
 	// TODO: handle z rotate one day
-	if(rotation.x != 0.0f || rotation.y != 0.0f || rotation.z != 0.0f) {
+	if (rotation.x != 0.0f || rotation.y != 0.0f || rotation.z != 0.0f) {
 		ri->rotate(rotation);
 	}
 }
@@ -150,11 +143,11 @@ bool InputHandler::update_camera(Camera* camera, int sWidth, int sHeight) {
 
 	static float mX = sWidth / 2;
 	static float mY = sHeight / 2;
-	
+
 	if (m_event.type == SDL_MOUSEMOTION) {
 		mX += (m_event.motion.xrel * sensitivity);
 		mY += (m_event.motion.yrel * sensitivity);
-		camera->mouse_look(glm::vec2(mX , mY));
+		camera->mouse_look(glm::vec2(mX, mY));
 	}
 
 	handle_camera_move(camera);

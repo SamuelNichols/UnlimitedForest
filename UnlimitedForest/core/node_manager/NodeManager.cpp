@@ -1,8 +1,7 @@
 #include "NodeManager.h"
 #include <camera/Camera.h>
 #include <render_item/RenderItem.h>
-
-#include <iostream>
+#include <log/Log.h>
 
 NodeManager::NodeManager() {}
 
@@ -68,11 +67,11 @@ bool NodeManager::select_camera(const uint8_t& id) {
 		selectedCamera = dynamic_cast<Camera*>(m_nodes.at(id));
 	}
 	catch (const std::out_of_range& e) {
-		std::cerr << "camera with id: " << id << " not found" << std::endl;
+		UF_LOG_ERROR("camera with id: {} not found", id);
 		return false;
 	}
 	if (selectedCamera == nullptr) {
-		std::cerr << "selected node was not of type Camera" << std::endl;
+		UF_LOG_ERROR("selected node was not of type Camera");
 		return false;
 	}
 	m_selectedCamera = selectedCamera;
@@ -82,7 +81,7 @@ bool NodeManager::select_camera(const uint8_t& id) {
 bool NodeManager::select_next_camera() {
 	// no cameras currently initialized, break early
 	if (m_cameras.size() == 0) {
-		std::cerr << "no camera to select" << std::endl;
+		UF_LOG_ERROR("no camera to select");
 		return false;
 	}
 
@@ -110,11 +109,11 @@ bool NodeManager::select_render_item(const uint8_t& id) {
 		selectedRenderItem = dynamic_cast<RenderItem*>(m_nodes.at(id));
 	}
 	catch (const std::out_of_range& e) {
-		std::cerr << "camera with id: " << id << " not found" << std::endl;
+		UF_LOG_ERROR("camera with id: {} not found", id);
 		return false;
 	}
 	if (selectedRenderItem == nullptr) {
-		std::cerr << "selected node was not of type RenderItem" << std::endl;
+		UF_LOG_ERROR("selected node was not of type RenderItem");
 		return false;
 	}
 	m_selectedRenderItem = selectedRenderItem;
@@ -124,7 +123,7 @@ bool NodeManager::select_render_item(const uint8_t& id) {
 bool NodeManager::select_next_render_item() {
 	// no renderItems currently initialized, break early
 	if (m_renderItems.size() == 0) {
-		std::cerr << "no renderItem to select" << std::endl;
+		UF_LOG_ERROR("no renderItem to select");
 		return false;
 	}
 

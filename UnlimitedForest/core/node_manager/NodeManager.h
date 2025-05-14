@@ -1,13 +1,12 @@
 #pragma once
-
-#include <glm/glm.hpp>
-#include <vector>
-#include <glad/glad.h>
-
 #include <node/Node.h>
 
-class Camera; // forward 
-class RenderItem; // forward
+#include <vector>
+#include <glm/glm.hpp>
+#include <glad/glad.h>
+
+class Camera; // forward ref
+class RenderItem; // forward ref
 
 class NodeManager {
 public:

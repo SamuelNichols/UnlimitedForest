@@ -1,12 +1,17 @@
 #include "RenderItem.h"
+#include <application/App.h>
+#include <camera/Camera.h>
 #include "log/Log.h"
+
+#include <algorithm>
 
 #define GLM_ENABLE_EXPERIMENTAL
 
 #include <glm/gtx/string_cast.hpp>
-#include <algorithm>
-#include <application/App.h>
-#include <camera/Camera.h>
+#include <glm/matrix.hpp>
+#include <glm/vec3.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 const float SCALEMIN = 0.1f;
 
@@ -23,26 +28,19 @@ RenderItem::RenderItem(const uint8_t& id, std::vector<GLfloat> vertexData, std::
 
 void RenderItem::translate(const glm::vec3& tlate) {
 	m_worldPosition += tlate;
-	UF_LOG_INFO(glm::to_string(m_worldPosition));
+	UF_LOG_DEBUG(glm::to_string(m_worldPosition));
 }
 
 void RenderItem::rotate(const glm::vec3& eulerAngles) {
 	m_rotation += eulerAngles;
-	UF_LOG_INFO(glm::to_string(m_rotation));
+	UF_LOG_DEBUG(glm::to_string(m_rotation));
 }
 
 void RenderItem::scale(const glm::vec3& scale) {
 	m_scale.x = std::max(m_scale.x + scale.x, SCALEMIN);
 	m_scale.y = std::max(m_scale.y + scale.y, SCALEMIN);
 	m_scale.z = std::max(m_scale.z + scale.z, SCALEMIN);
-	UF_LOG_INFO(glm::to_string(m_scale));
-}
-
-void catch_gl_errorr(const std::string& errorMessage) {
-	GLenum error = glGetError();
-	if (error != GL_NO_ERROR) {
-		UF_LOG_ERROR("GLError [{}] : {}\n", error, errorMessage);
-	}
+	UF_LOG_DEBUG(glm::to_string(m_scale));
 }
 
 // inherited from node object, will handle the render flow
@@ -56,11 +54,11 @@ void RenderItem::mesh_specification() {
 	// generating VBO and VAO for loading vertex data
 	glGenBuffers(1, &m_vertexBufferObject);
 	glGenVertexArrays(1, &m_vertexArrayObject);
-	catch_gl_errorr("error generating vbo/vao");
+	CATCH_GL_ERROR("error generating vbo/vao");
 
 	// Binding VAO for coming definitions
 	glBindVertexArray(m_vertexArrayObject);
-	catch_gl_errorr("error binding vao");
+	CATCH_GL_ERROR("error binding vao");
 
 
 	// binding buffer and loading data into VBO
@@ -70,7 +68,7 @@ void RenderItem::mesh_specification() {
 		m_vertexData.data(),
 		GL_STATIC_DRAW
 	);
-	catch_gl_errorr("error generating vbo");
+	CATCH_GL_ERROR("error generating vbo");
 
 
 	// defining vertex positions for vao in vaa index 0
@@ -82,7 +80,7 @@ void RenderItem::mesh_specification() {
 		sizeof(GLfloat) * 6,              // stride (0 means tightly packed)
 		(GLvoid*)0     // offset of the first component
 	);
-	catch_gl_errorr("error setting vertex attributes idx: 0");
+	CATCH_GL_ERROR("error setting vertex attributes idx: 0");
 
 
 	// defining vertex color data for vao in vaa index 1
@@ -94,7 +92,7 @@ void RenderItem::mesh_specification() {
 		sizeof(GLfloat) * 6,
 		(GLvoid*)(sizeof(GLfloat) * 3)
 	);
-	catch_gl_errorr("error setting vertex attributes idx: 1");
+	CATCH_GL_ERROR("error setting vertex attributes idx: 1");
 
 
 	// loading in indexcies of vertex position elements for later rendering
@@ -106,7 +104,7 @@ void RenderItem::mesh_specification() {
 		m_vertexIdxs.data(),
 		GL_STATIC_DRAW
 	);
-	catch_gl_errorr("error loading VEO");
+	CATCH_GL_ERROR("error loading VEO");
 
 	// cleaning up vbo\vao as well
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -121,7 +119,6 @@ void RenderItem::predraw() {
 	glUseProgram(gp);
 
 	// Constant rotation to object
-	//g_selectedItemTransform.roty += 0.05f;
 	NodeManager* nm = app->get_node_manager();
 	Camera* camera = nm->get_camera();
 
@@ -179,13 +176,13 @@ void RenderItem::draw() {
 		GL_UNSIGNED_INT,
 		(GLvoid*)0
 	);
-	catch_gl_errorr("error drawing triangles");
+	CATCH_GL_ERROR("error drawing triangles");
 	// cleanup graphics pipeline
 	glUseProgram(0);
 }
 
 void RenderItem::print() {
-	UF_LOG_DEBUG("id: {}\nwp: {}\nscale: {}\nrot: {}\n",
+	UF_LOG_DEBUG("id: {}\nwp: {}\nscale: {}\nrot: {}",
 		get_id(),
 		glm::to_string(m_worldPosition),
 		glm::to_string(m_scale),

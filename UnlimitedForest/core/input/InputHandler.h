@@ -1,16 +1,13 @@
 #pragma once
-#include <SDL.h>
-#include <iostream>
-#include "node_manager/NodeManager.h"
+
 #include <camera/Camera.h>
 #include <render_item/RenderItem.h>
 
-extern int g_screenWidth;
-extern int g_screenHeight;
+#include <SDL.h>
 
-// input vars
-const float MOVESTEP = 0.01f;
-const float SCALESTEP = 0.01f;
+// const input vars
+constexpr float MOVESTEP = 0.01f;
+constexpr float SCALESTEP = 0.01f;
 constexpr float sensitivity = 0.333f;
 
 // selected item manager, really TODO type shit

@@ -5,11 +5,6 @@
 #include <camera/Camera.h>
 #include <render_item/RenderItem.h>
 
-//global logging object
-#include <spdlog/spdlog.h>
-extern std::shared_ptr<spdlog::logger> g_infoLogger;
-extern std::shared_ptr<spdlog::logger> g_errorLogger;
-
 extern int g_screenWidth;
 extern int g_screenHeight;
 

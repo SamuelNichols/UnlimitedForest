@@ -2,10 +2,12 @@
 
 #include <glm/glm.hpp>
 #include <vector>
+#include <glad/glad.h>
 
 #include <node/Node.h>
-#include <render_item/RenderItem.h>
-#include <camera/Camera.h>
+
+class Camera; // forward 
+class RenderItem; // forward
 
 class NodeManager {
 public:
@@ -13,12 +15,18 @@ public:
 	~NodeManager();
 	// update functionality for game loop
 	bool update(void);
-	
+
 	// child node constructors
 	uint8_t create_camera(void);
 	uint8_t create_camera(const glm::vec3& eye, const glm::vec3& viewDirectio, const glm::vec3& up);
 
-	uint8_t create_render_item(const glm::vec3& worldPosition, const glm::vec3& rotation, const glm::vec3& scale);
+	uint8_t create_render_item(
+		std::vector<GLfloat> vertexData,
+		std::vector<GLuint> vertexIdxs,
+		const glm::vec3& worldPosition,
+		const glm::vec3& rotation,
+		const glm::vec3& scale
+	);
 
 	Camera* get_camera(void);
 	RenderItem* get_render_item(void);

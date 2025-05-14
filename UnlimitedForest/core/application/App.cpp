@@ -3,7 +3,6 @@
 App* App::m_app = nullptr;
 
 App::App() {
-	initialize_logger();
 	m_graphicsPipelineShaderProgram = 0;
 	m_running = false;
 	initialize_sdl();
@@ -13,14 +12,8 @@ App::App() {
 }
 
 App::~App() {
-	g_infoLogger->info("app deconstruction");
+	UF_LOG_INFO("app deconstruction");
 	cleanup();
-}
-
-void App::initialize_logger() {
-	// create a color multi-threaded logger
-	g_infoLogger = spdlog::stdout_color_mt("console");
-	g_errorLogger = spdlog::stderr_color_mt("stderr");
 }
 
 void App::initialize_sdl(){
@@ -37,7 +30,10 @@ void App::initialize_sdl(){
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
 	// creating the window handler
-	m_graphicsApplicationWindow = SDL_CreateWindow("Unlimited Forest", 100, 100, m_engineConfig.m_screenWidth, m_engineConfig.m_screenHeight, SDL_WINDOW_OPENGL);
+	Uint32 flags = SDL_WINDOW_OPENGL  
+		| SDL_WINDOW_RESIZABLE
+		| SDL_WINDOW_ALLOW_HIGHDPI;
+	m_graphicsApplicationWindow = SDL_CreateWindow("Unlimited Forest", 100, 100, m_engineConfig.m_screenWidth, m_engineConfig.m_screenHeight, flags);
 	assert(m_graphicsApplicationWindow);
 
 	// initializing opengl context
@@ -46,7 +42,7 @@ void App::initialize_sdl(){
 
 	// init glad, loading OpenGL function pointers
 	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
-		g_errorLogger->error("Failed to initialize GLAD");
+		UF_LOG_ERROR("Failed to initialize GLAD");
 		cleanup();
 		std::exit(-1);
 	}
@@ -54,7 +50,28 @@ void App::initialize_sdl(){
 
 	// creating inital nodes
 	m_nodeManager.create_camera();
-	m_nodeManager.create_render_item(glm::vec3(0.0f, 0.0f, 0.0f),
+	// TODO: find a better place to define render objects
+	m_nodeManager.create_render_item(
+		{
+			//   x      y      z// quad
+			// vec 1
+			-0.5f, -0.5f, 0.0f, // x y z bottom left
+			1.0f, 0.0f, 0.0f,   // r g b
+			// vec 2
+			0.5f, -0.5f, 0.0f,  // x y z bottom right
+			0.0f, 1.0f, 0.0f,   // r g b
+			// vec 3
+			-0.5f,  0.5f, 0.0f, // x y z top left
+			0.0f, 0.0f, 1.0f,   // r g b
+			// vec 4
+			0.5f, 0.5f, 0.0f,  // x y z top right
+			0.0f, 1.0f, 0.0f,   // r g b
+		},
+		{
+		0, 1, 2,
+		1, 3, 2
+		},
+		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(1.0f, 1.0f, 1.0f)
 	);
@@ -69,7 +86,7 @@ void App::get_opengl_version_info() {
 	const char* renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
 	const char* version = reinterpret_cast<const char*>(glGetString(GL_VERSION));
 	const char* glsl = reinterpret_cast<const char*>(glGetString(GL_SHADING_LANGUAGE_VERSION));
-	g_infoLogger->info("\nVendor: {}\nRenderer: {}\nVersion: {}\nShading Language: {}\n",
+	UF_LOG_INFO("\nVendor: {}\nRenderer: {}\nVersion: {}\nShading Language: {}\n",
 		vendor,
 		renderer,
 		version,
@@ -94,6 +111,10 @@ void App::stop() {
 
 bool App::is_running() const {
 	return m_running;
+}
+
+void App::update() {
+	m_nodeManager.update();
 }
 
 // TODO: move this to graphics pipeline / shader handler
@@ -167,6 +188,11 @@ void App::create_graphics_pipeline() {
 	m_graphicsPipelineShaderProgram = create_shader_program(vertexShaderSource, fragmentShaderSource);
 
 	//catch_gl_error("error creating graphics pipeline");
+}
+
+void App::resize_window(int w, int h) {
+	UF_LOG_INFO("hit {}|{}", w, h);
+	SDL_SetWindowSize(m_graphicsApplicationWindow, w, h);
 }
 
 std::string App::load_shader_as_string(const std::string& filename) {

@@ -10,11 +10,6 @@
 
 #include <node/Node.h>
 
-//global logging object
-#include <spdlog/spdlog.h>
-extern std::shared_ptr<spdlog::logger> g_infoLogger;
-extern std::shared_ptr<spdlog::logger> g_errorLogger;
-
 class Camera : public Node {
 public:
 	Camera(const uint8_t& id);

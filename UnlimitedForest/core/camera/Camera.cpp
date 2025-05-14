@@ -1,4 +1,6 @@
 #include <camera/Camera.h>
+#include <log/Log.h>
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 
@@ -27,7 +29,7 @@ void Camera::translate(const glm::vec3& translation) {
 }
 
 void Camera::mouse_look(const glm::vec2& mouse) {
-	g_infoLogger->info("x: {}, y: {}\n\n", mouse.x, mouse.y);
+	UF_LOG_INFO("x: {}, y: {}\n\n", mouse.x, mouse.y);
 	std::call_once(m_oldMousePosInit, [this, mouse]() {
 		m_oldMousePos = mouse;
 		});
@@ -73,5 +75,5 @@ void Camera::move_down(const float& speed) {
 }
 
 void Camera::print() {
-	g_infoLogger->info("eye: {} | view: {} | up: {}", glm::to_string(m_eye), glm::to_string(m_viewDirection), glm::to_string(m_upVector));
+	UF_LOG_INFO("eye: {} | view: {} | up: {}", glm::to_string(m_eye), glm::to_string(m_viewDirection), glm::to_string(m_upVector));
 }

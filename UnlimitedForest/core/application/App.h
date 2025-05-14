@@ -1,14 +1,13 @@
 #pragma once
 
 #include "EngineConfig.h"
-#include "../node_manager/NodeManager.h"
-#include "../camera/Camera.h"
+#include "node_manager/NodeManager.h"
+#include "camera/Camera.h"
+#include "log/Log.h"
 
 #include "glad/glad.h"
 #include <SDL.h>
 #include <memory>
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
 #include <filesystem>
 #include <initializer_list>
 #include <iostream>	
@@ -27,9 +26,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/string_cast.hpp>
 
-extern std::shared_ptr<spdlog::logger> g_infoLogger;
-extern std::shared_ptr<spdlog::logger> g_errorLogger;
-
 class App {
 public:
 	App();
@@ -40,6 +36,8 @@ public:
 	bool is_running(void) const;
 
 	static App* get() { return m_app; }
+
+	void update(void);
 
 	NodeManager* get_node_manager() {
 		return &m_nodeManager;
@@ -56,8 +54,9 @@ public:
 		return m_engineConfig;
 	}
 
+	void resize_window(int w, int h);
+
 private:
-	void initialize_logger(void);
 	void initialize_sdl(void);
 	void get_opengl_version_info(void);
 	void cleanup(void);

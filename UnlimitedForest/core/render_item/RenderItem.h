@@ -1,19 +1,44 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#include <glad/glad.h>
 #include <memory>
+#include <SDL.h>
+#include <iostream>
+#include <cassert>
+#include <vector>
+#include <fstream>
+#include <string>
+#include <filesystem>	
+#include <initializer_list>
+
+#define GLM_ENABLE_EXPERIMENTAL
+
+#include <glm/glm.hpp>
+#include <glm/matrix.hpp>
+#include <glm/vec3.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include "node/Node.h"
 
-//global logging object
-#include <spdlog/spdlog.h>
-extern std::shared_ptr<spdlog::logger> g_infoLogger;
-extern std::shared_ptr<spdlog::logger> g_errorLogger;
+class App;        // forward
+class Camera;
 
 class RenderItem : public Node {
 public:
-	RenderItem(const uint8_t& id, const glm::vec3& worldPosition, const glm::vec3& rotation, const glm::vec3& scale);
+	RenderItem(const uint8_t& id, 
+		std::vector<GLfloat> vertexData, 
+		std::vector<GLuint> vertexIdxs,
+		const glm::vec3& worldPosition, 
+		const glm::vec3& rotation, 
+		const glm::vec3& scale
+	);
 	~RenderItem() {};
+
+	void update(void) override;
+	void predraw(void);
+	void draw();
 
 	void translate(const glm::vec3& translation);
 	void rotate(const glm::vec3& eulerAngles);
@@ -21,11 +46,24 @@ public:
 
 	void print(void);
 
+private:
+	void mesh_specification(void);
+	std::vector<GLfloat> m_vertexData;
+	std::vector<GLuint> m_vertexIdxs;
+
 	// TODO: handle all of the opengl functionality for actually drawing on update tick here
-// private: TODO: these variables should be private but for now they are public since rendering is happening outside of this node
-// 	   // later rendering will be moved within this node
+	// private: TODO: these variables should be private but for now they are public since rendering is happening outside of this node
+	//		later rendering will be moved within this node
 	//uint8_t create_render_item(const glm::vec3& worldPosition, const glm::vec3& rotation, const glm::vec3& scale);
 	glm::vec3 m_worldPosition;
 	glm::vec3 m_rotation;
 	glm::vec3 m_scale;
+
+	// OpenGL variables
+	// OpenGL VAO \ VBO
+	GLuint m_vertexArrayObject = 0;
+	GLuint m_vertexBufferObject = 0;
+	// index buffer for reusing shared indecies of triangles
+	// TODO: this might make sense in a more abstracted sense to allow for more efficient rendering
+	GLuint m_vertexElementBuffer = 0;
 };

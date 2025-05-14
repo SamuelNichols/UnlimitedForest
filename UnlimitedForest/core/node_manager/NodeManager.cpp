@@ -1,4 +1,6 @@
 #include "NodeManager.h"
+#include <camera/Camera.h>
+#include <render_item/RenderItem.h>
 
 #include <iostream>
 
@@ -11,7 +13,9 @@ NodeManager::~NodeManager() {
 }
 
 bool NodeManager::update() {
-	std::cout << "nm update hit" << std::endl;
+	for (Node* node : m_nodes) {
+		node->update();
+	}
 	return true;
 }
 
@@ -41,9 +45,15 @@ uint8_t NodeManager::create_camera(const glm::vec3& eye, const glm::vec3& viewDi
 	return newId;
 }
 
-uint8_t NodeManager::create_render_item(const glm::vec3& worldPosition, const glm::vec3& rotation, const glm::vec3& scale) {
+uint8_t NodeManager::create_render_item(
+	std::vector<GLfloat> vertexData, 
+	std::vector<GLuint> vertexIdxs,
+	const glm::vec3& worldPosition, 
+	const glm::vec3& rotation, 
+	const glm::vec3& scale
+) {
 	uint8_t newId = create_id();
-	RenderItem* newRI = new RenderItem(newId, worldPosition, rotation, scale);
+	RenderItem* newRI = new RenderItem(newId, vertexData, vertexIdxs, worldPosition, rotation, scale);
 	m_nodes.emplace_back(newRI);
 	m_renderItems.emplace_back(newId);
 	if (!m_selectedRenderItem) {

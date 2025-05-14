@@ -4,6 +4,7 @@
 
 #include "InputHandler.h"
 #include "../core/application/App.h"
+#include "log/Log.h"
 
 
 InputHandler::InputHandler() {
@@ -19,7 +20,7 @@ bool InputHandler::update() {
 	NodeManager* nm = app->get_node_manager();
 	while (SDL_PollEvent(&m_event)) {
 		if (m_event.type == SDL_QUIT) {
-			std::cout << "User exited program. Terminating..." << std::endl;
+			UF_LOG_INFO("User exited program. Terminating...");
 			return false;
 		}
 		if (m_event.type == SDL_KEYDOWN && !m_event.key.repeat) {
@@ -28,10 +29,10 @@ bool InputHandler::update() {
 				switch (m_currItem)
 				{
 				case ITEM:
-					std::cout << "item selected" << std::endl;
+					UF_LOG_INFO("item selected");
 					break;
 				case CAMERA:
-					std::cout << "camera selected" << std::endl;
+					UF_LOG_INFO("camera selected");
 					break;
 				case END:
 					break;

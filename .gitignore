@@ -1,2 +1,25 @@
-.vs/
-out/
+# ----- Premake-generated VS files (don’t check these in) -----
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user            # per-user project settings
+
+# ----- Visual Studio local settings -----
+.vs/                   # VS workspace cache
+*.suo                  # Solution user options
+*.user                 # Project user options
+*.VC.db                # IntelliSense database
+*.VC.VC.opendb         # IntelliSense cache
+
+# ----- Build artifacts -----
+/bin/
+/obj/
+/out/
+*.exe
+*.dll
+*.lib
+*.pdb
+*.idb
+
+# ----- Misc -----
+*.log                  # log files

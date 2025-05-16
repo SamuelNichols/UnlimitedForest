@@ -3,7 +3,7 @@
 #include <camera/Camera.h>
 #include <render_item/RenderItem.h>
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 // const input vars
 constexpr float MOVESTEP = 0.01f;

@@ -7,7 +7,7 @@
 #include "log/Log.h"
 
 #include "glad/glad.h"
-#include <SDL.h>
+#include <SDL2/SDL.h>
 #include <filesystem>
 #include <initializer_list>
 #include <string>
@@ -65,12 +65,26 @@ private:
 	static App* m_app;
 };
 
-template<typename... Args>
-std::string make_relative_path(Args... args) {
-	std::filesystem::path result;
+inline std::string get_executable_path() {
+	char path[MAX_PATH];
+	GetModuleFileNameA(NULL, path, MAX_PATH);
+	std::string executablePath(path);
 
-	// Fold expression to append each argument to the path
-	(result /= ... /= args);
+	// Get the directory containing the executable
+	size_t lastSlash = executablePath.find_last_of("\\/");
+	if (lastSlash != std::string::npos) {
+		return executablePath.substr(0, lastSlash);
+	}
 
-	return result.string();
+	// Fallback to current directory
+	return ".";
 }
+
+template<typename... Args>
+std::string make_absolute_path(Args... args) {
+    std::filesystem::path result = get_executable_path();
+    // Fold expression to append each argument to the path
+    (result /= ... /= args);
+    return result.string();
+}
+

@@ -238,8 +238,8 @@ GLuint App::create_shader_program(const std::string& vertexShaderSource, const s
 }
 
 void App::create_graphics_pipeline() {
-	const std::string vertexShaderSource = load_shader_as_string(make_relative_path("shaders", "vert.glsl"));
-	const std::string fragmentShaderSource = load_shader_as_string(make_relative_path("shaders", "frag.glsl"));
+	const std::string vertexShaderSource = load_shader_as_string(make_absolute_path("shaders", "vert.glsl"));
+	const std::string fragmentShaderSource = load_shader_as_string(make_absolute_path("shaders", "frag.glsl"));
 	m_graphicsPipelineShaderProgram = create_shader_program(vertexShaderSource, fragmentShaderSource);
 
 	CATCH_GL_ERROR("error creating graphics pipeline");
